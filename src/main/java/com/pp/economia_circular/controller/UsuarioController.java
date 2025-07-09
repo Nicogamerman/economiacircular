@@ -1,5 +1,6 @@
 package com.pp.economia_circular.controller;
 
+import com.pp.economia_circular.entity.Taller;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,14 @@ public class UsuarioController {
     @GetMapping
     public List<Usuario> listarUsuarios() {
         return usuarioRepository.findAll();
+    }
+
+    // GET: usuario por id
+    @GetMapping("/{id}")
+    public ResponseEntity<Usuario> obtenerUsuario(@PathVariable Long id) {
+        return usuarioRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // POST: crear nuevo usuario
