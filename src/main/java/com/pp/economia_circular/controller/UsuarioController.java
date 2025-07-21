@@ -16,7 +16,7 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
+ 
     // GET: listar todos los usuarios
     @GetMapping
     public List<Usuario> listarUsuarios() {
