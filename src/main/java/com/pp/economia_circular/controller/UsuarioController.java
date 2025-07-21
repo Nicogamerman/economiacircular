@@ -30,7 +30,7 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST: crear nuevo usuario
+    // POST: crear nuevo usuario.
     @PostMapping
     public void crearUsuario(@RequestBody Usuario usuario) {
          usuarioRepository.save(usuario);
