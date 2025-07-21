@@ -10,6 +10,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/talleres")
+@CrossOrigin(origins = "*")
+
 public class TallerController {
 
     @Autowired
