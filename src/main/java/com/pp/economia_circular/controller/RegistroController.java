@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/api/registrar")
 public class RegistroController {
 
     @Autowired
