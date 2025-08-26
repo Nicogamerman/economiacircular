@@ -44,7 +44,7 @@ public class RegistroController {
                 .creadoEn(LocalDateTime.now())
                 .actualizadoEn(LocalDateTime.now())
                 .build();
-
+        usuarioRepository.save(usuario);
         return ResponseEntity.ok().build();
     }
 
