@@ -23,10 +23,13 @@ public class RegistroController {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/registrar")
-    public Usuario registrarUsuario(@RequestBody UsuarioRequest request) {
+    public ResponseEntity<?> registrarUsuario(@RequestBody UsuarioRequest request) {
         byte[] fotoBytes = null;
         if (request.getFotoBase64() != null && !request.getFotoBase64().isEmpty()) {
             fotoBytes = Base64.getDecoder().decode(request.getFotoBase64());
+        }
+        if (usuarioRepository.findByEmail(request.getEmail()).isPresent()){
+            return ResponseEntity.badRequest().body("Ya existe un usuario registrado");
         }
 
         Usuario usuario = Usuario.builder()
@@ -42,7 +45,7 @@ public class RegistroController {
                 .actualizadoEn(LocalDateTime.now())
                 .build();
 
-        return usuarioRepository.save(usuario);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}/foto")
