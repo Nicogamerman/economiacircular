@@ -5,18 +5,18 @@ steps:
 
   # 2. Construir la imagen Docker
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/economiacircular', '.']
+    args: ['build', '-t', 'gcr.io/economia-circular-470222/economiacircular', '.']
 
   # 3. Subir la imagen al Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/economiacircular']
+    args: ['push', 'gcr.io/economia-circular-470222/economiacircular']
 
   # 4. Desplegar en Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
       'run', 'deploy', 'tu-app',
-      '--image', 'gcr.io/$PROJECT_ID/economiacircular',
+      '--image', 'gcr.io/economia-circular-470222/economiacircular',
       '--platform', 'managed',
       '--region', 'us-central1',
       '--allow-unauthenticated',
