@@ -1,7 +1,7 @@
 steps:
-  # 1. Compilar el proyecto con Maven
+  # 1. Compilar el proyecto con Maven (sin tests para ahorrar tiempo)
   - name: 'gcr.io/cloud-builders/mvn'
-    args: ['clean', 'package']
+    args: ['clean', 'package', '-DskipTests']
 
   # 2. Construir la imagen Docker
   - name: 'gcr.io/cloud-builders/docker'
@@ -15,10 +15,19 @@ steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
-      'run', 'deploy', 'tu-app',
+      'run', 'deploy', 'economiacircular',       # nombre del servicio (no 'tu-app')
       '--image', 'gcr.io/economia-circular-470222/economiacircular',
       '--platform', 'managed',
       '--region', 'us-central1',
       '--allow-unauthenticated',
-      '--set-env-vars', 'SPRING_DATASOURCE_URL=jdbc:mysql://34.30.14.16:3306/economia-circular?useSSL=false,SPRING_DATASOURCE_USERNAME=sa,SPRING_DATASOURCE_PASSWORD=PirAta.22'
+      '--set-env-vars',
+      'SPRING_DATASOURCE_URL=jdbc:mysql://34.30.14.16:3306/economia-circular?useSSL=false&serverTimezone=UTC',
+      'SPRING_DATASOURCE_USERNAME=sa',
+      'SPRING_DATASOURCE_PASSWORD=PirAta.22'
     ]
+
+images:
+  - 'gcr.io/economia-circular-470222/economiacircular'
+
+options:
+  logging: CLOUD_LOGGING_ONLY   # ✅ evita el error de logs/service_account
