@@ -14,20 +14,22 @@ steps:
   # 4. Desplegar en Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
-    args: [
-      'run', 'deploy', 'economiacircular',       # nombre del servicio (no 'tu-app')
-      '--image', 'gcr.io/economia-circular-470222/economiacircular',
-      '--platform', 'managed',
-      '--region', 'us-central1',
-      '--allow-unauthenticated',
-      '--set-env-vars',
-      'SPRING_DATASOURCE_URL=jdbc:mysql://34.30.14.16:3306/economia-circular?useSSL=false&serverTimezone=UTC',
-      'SPRING_DATASOURCE_USERNAME=sa',
-      'SPRING_DATASOURCE_PASSWORD=PirAta.22'
-    ]
+    args:
+      - 'run'
+      - 'deploy'
+      - 'economiacircular'
+      - '--image'
+      - 'gcr.io/economia-circular-470222/economiacircular'
+      - '--platform'
+      - 'managed'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'SPRING_DATASOURCE_URL=jdbc:mysql://34.30.14.16:3306/economia-circular?useSSL=false&serverTimezone=UTC,SPRING_DATASOURCE_USERNAME=sa,SPRING_DATASOURCE_PASSWORD=PirAta.22'
 
 images:
   - 'gcr.io/economia-circular-470222/economiacircular'
 
 options:
-  logging: CLOUD_LOGGING_ONLY   # ✅ evita el error de logs/service_account
+  logging: CLOUD_LOGGING_ONLY
