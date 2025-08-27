@@ -10,7 +10,6 @@
 	</parent>
 	<groupId>com.pp</groupId>
 	<artifactId>economia-circular</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
 	<name>economia-circular</name>
 	<description>Tesis for System Analist</description>
 	<url/>
