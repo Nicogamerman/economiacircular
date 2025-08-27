@@ -1,0 +1,24 @@
+steps:
+  # 1. Compilar el proyecto con Maven
+  - name: 'gcr.io/cloud-builders/mvn'
+    args: ['clean', 'package']
+
+  # 2. Construir la imagen Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/economiacircular', '.']
+
+  # 3. Subir la imagen al Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/economiacircular']
+
+  # 4. Desplegar en Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'tu-app',
+      '--image', 'gcr.io/$PROJECT_ID/economiacircular',
+      '--platform', 'managed',
+      '--region', 'us-central1',
+      '--allow-unauthenticated',
+      '--set-env-vars', 'SPRING_DATASOURCE_URL=jdbc:mysql://34.30.14.16:3306/economia-circular?useSSL=false,SPRING_DATASOURCE_USERNAME=sa,SPRING_DATASOURCE_PASSWORD=PirAta.22'
+    ]
