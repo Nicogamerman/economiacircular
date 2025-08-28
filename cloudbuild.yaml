@@ -17,7 +17,7 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'economiacircular'                 # nombre del servicio
+      - 'economiacircular'
       - '--image'
       - 'gcr.io/economia-circular-470222/economia-circular'
       - '--platform'
@@ -26,12 +26,15 @@ steps:
       - 'us-central1'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'SPRING_DATASOURCE_URL=jdbc:mysql:///economia-circular?socketFactory=com.google.cloud.sql.mysql.SocketFactory&cloudSqlInstance=economia-circular-470222:us-central1:root,SPRING_DATASOURCE_USERNAME=sa,SPRING_DATASOURCE_PASSWORD=PirAta.22'
+      - 'SPRING_DATASOURCE_URL=jdbc:mysql:///economia-circular?cloudSqlInstance=economia-circular-470222:us-central1:root&socketFactory=com.google.cloud.sql.mysql.SocketFactory'
+      - '--set-env-vars'
+      - 'SPRING_DATASOURCE_USERNAME=sa'
+      - '--set-env-vars'
+      - 'SPRING_DATASOURCE_PASSWORD=PirAta.22'
       - '--add-cloudsql-instances'
       - 'economia-circular-470222:us-central1:root'
       - '--timeout'
       - '10m'
-
 
 images:
   - 'gcr.io/economia-circular-470222/economia-circular'
