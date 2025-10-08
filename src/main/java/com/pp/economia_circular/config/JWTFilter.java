@@ -6,6 +6,7 @@ import com.pp.economia_circular.service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 
@@ -36,9 +37,14 @@ public class JWTFilter implements Filter {
 
             if (email != null && jwtService.validarToken(token)) {
                 Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+
                 if (usuario != null) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            usuario, null, Collections.emptyList());
+                    // Creamos un UserDetails seguro solo con email y roles vacíos
+                    User userDetails = new User(usuario.getEmail(), usuario.getContrasena(), Collections.emptyList());
+
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
