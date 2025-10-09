@@ -12,7 +12,7 @@
 	<artifactId>economia-circular</artifactId>
 	<name>economia-circular</name>
 	<description>Tesis for System Analist</description>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<url/>
 	<licenses>
 		<license/>
