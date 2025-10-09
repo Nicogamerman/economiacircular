@@ -1,5 +1,5 @@
 runtime: java11
-env: standard
+env: flex
 
 env_variables:
   SPRING_DATASOURCE_URL: jdbc:mysql://google/economia_circular?cloudSqlInstance=economia-circular-470222:us-central1:mi-instancia-sql&socketFactory=com.google.cloud.sql.mysql.SocketFactory
