@@ -26,7 +26,7 @@ steps:
       - 'us-central1'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'SPRING_DATASOURCE_URL=jdbc:mysql://google/economia_circular?cloudSqlInstance=economia-circular-470222:us-central1:root&socketFactory=com.google.cloud.sql.mysql.SocketFactory'
+      - 'SPRING_DATASOURCE_URL=jdbc:mysql://google/economia-circular?cloudSqlInstance=economia-circular-470222:us-central1:root&socketFactory=com.google.cloud.sql.mysql.SocketFactory'
       - '--set-env-vars'
       - 'SPRING_DATASOURCE_USERNAME=user'
       - '--set-env-vars'
