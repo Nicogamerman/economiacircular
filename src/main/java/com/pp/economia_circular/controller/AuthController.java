@@ -8,15 +8,14 @@ import com.pp.economia_circular.service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -25,18 +24,47 @@ public class AuthController {
     @Autowired
     private JWTService jwtService;
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
-        Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(request.getEmail());
+        try {
+            Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(request.getEmail());
 
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
-            if (usuario.getContrasena().equals(request.getContrasena())) {
-                String token = jwtService.generarToken(usuario.getEmail());
-                return ResponseEntity.ok(new AuthResponse(token));
+            if (usuarioOpt.isPresent()) {
+                Usuario usuario = usuarioOpt.get();
+                
+                // Verificar si el usuario está activo
+                if (!usuario.isActivo()) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body("Usuario inactivo");
+                }
+                
+                // Verificar contraseña (tanto texto plano como encriptada)
+                boolean passwordMatches = false;
+                if (usuario.getContrasena().equals(request.getContrasena())) {
+                    // Contraseña en texto plano (para usuarios existentes)
+                    passwordMatches = true;
+                } else if (passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
+                    // Contraseña encriptada
+                    passwordMatches = true;
+                }
+                
+                if (passwordMatches) {
+                    String token = jwtService.generarToken(usuario.getEmail());
+                    AuthResponse response = AuthResponse.builder()
+                            .token(token)
+                            .build();
+                    return ResponseEntity.ok(response);
+                }
             }
-        }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Credenciales inválidas");
+                    
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno del servidor: " + e.getMessage());
+        }
     }
 }
