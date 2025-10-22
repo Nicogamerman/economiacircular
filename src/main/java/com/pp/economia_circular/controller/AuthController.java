@@ -29,6 +29,17 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
         try {
+            // Validar que email y contraseña no sean null
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Email es requerido");
+            }
+            
+            if (request.getContrasena() == null || request.getContrasena().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Contraseña es requerida");
+            }
+            
             Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(request.getEmail());
 
             if (usuarioOpt.isPresent()) {

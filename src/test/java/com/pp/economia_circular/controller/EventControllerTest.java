@@ -34,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = EventController.class)
+@org.springframework.context.annotation.Import(com.pp.economia_circular.config.TestSecurityConfig.class)
 @org.springframework.test.context.ActiveProfiles("test")
 class EventControllerTest {
 
@@ -136,7 +137,7 @@ class EventControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void createEvent_AsUser_Forbidden() throws Exception {
-        // Act & Assert - usuario regular no puede crear eventos
+        // Act & Assert - Un USER no puede crear eventos (requiere ADMIN)
         mockMvc.perform(post("/api/events")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -242,7 +243,7 @@ class EventControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void updateEvent_AsUser_Forbidden() throws Exception {
-        // Act & Assert - usuario regular no puede actualizar eventos
+        // Act & Assert - Un USER no puede actualizar eventos (requiere ADMIN)
         mockMvc.perform(put("/api/events/1")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -286,7 +287,7 @@ class EventControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void deleteEvent_AsUser_Forbidden() throws Exception {
-        // Act & Assert - usuario regular no puede eliminar eventos
+        // Act & Assert - Un USER no puede eliminar eventos (requiere ADMIN)
         mockMvc.perform(delete("/api/events/1")
                 .with(csrf()))
                 .andExpect(status().isForbidden());

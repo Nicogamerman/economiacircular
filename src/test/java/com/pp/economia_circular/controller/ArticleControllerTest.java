@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = ArticleController.class)
+@org.springframework.context.annotation.Import(com.pp.economia_circular.config.TestSecurityConfig.class)
 @org.springframework.test.context.ActiveProfiles("test")
 class ArticleControllerTest {
 

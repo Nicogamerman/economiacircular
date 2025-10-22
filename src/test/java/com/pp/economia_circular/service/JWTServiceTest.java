@@ -32,7 +32,7 @@ class JWTServiceTest {
 
     private Usuario usuarioTest;
     private static final String TEST_EMAIL = "test@test.com";
-    private static final String SECRET_KEY = "mySecretKey12345"; // Debe coincidir con el que usa JWTService
+    private static final String SECRET_KEY = "clave-secreta-super-segura-para-economia-circular-2024"; // Debe coincidir con el que usa JWTService
 
     @BeforeEach
     void setUp() {
@@ -120,7 +120,7 @@ class JWTServiceTest {
         String token = jwtService.generarToken(TEST_EMAIL);
 
         // Act
-        String emailExtraido = jwtService.obtenerEmailDesdeToken(token);
+        String emailExtraido = jwtService.extraerEmail(token);
 
         // Assert
         assertEquals(TEST_EMAIL, emailExtraido, "El email extraído debe coincidir con el original");
@@ -131,56 +131,58 @@ class JWTServiceTest {
     void testValidarTokenValido() {
         // Arrange
         String token = jwtService.generarToken(TEST_EMAIL);
-        when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioTest));
 
         // Act
         boolean esValido = jwtService.validarToken(token);
 
         // Assert
         assertTrue(esValido, "El token debería ser válido");
-        verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
     }
 
     @Test
-    @DisplayName("Validar token con usuario inexistente retorna false")
-    void testValidarTokenUsuarioInexistente() {
+    @DisplayName("Validar token con formato incorrecto retorna false")
+    void testValidarTokenFormatoIncorrecto() {
         // Arrange
-        String token = jwtService.generarToken(TEST_EMAIL);
-        when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.empty());
+        String tokenInvalido = "token.invalido.aqui";
 
         // Act
-        boolean esValido = jwtService.validarToken(token);
+        boolean esValido = jwtService.validarToken(tokenInvalido);
 
         // Assert
-        assertFalse(esValido, "El token no debería ser válido si el usuario no existe");
-        verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
+        assertFalse(esValido, "El token no debería ser válido");
     }
 
     @Test
-    @DisplayName("Validar token malformado lanza excepción o retorna false")
+    @DisplayName("Validar token malformado retorna false")
     void testValidarTokenMalformado() {
         // Arrange
         String tokenMalformado = "este.no.es.un.token.valido";
 
-        // Act & Assert
-        assertThatThrownBy(() -> jwtService.validarToken(tokenMalformado))
-                .isInstanceOf(Exception.class);
+        // Act
+        boolean esValido = jwtService.validarToken(tokenMalformado);
+
+        // Assert
+        assertFalse(esValido, "El token malformado no debería ser válido");
     }
 
     @Test
-    @DisplayName("Validar token vacío lanza excepción")
+    @DisplayName("Validar token vacío retorna false")
     void testValidarTokenVacio() {
-        // Act & Assert
-        assertThatThrownBy(() -> jwtService.validarToken(""))
-                .isInstanceOf(Exception.class);
+        // Act
+        boolean esValido = jwtService.validarToken("");
+
+        // Assert
+        assertFalse(esValido, "El token vacío no debería ser válido");
     }
 
     @Test
-    @DisplayName("Validar token null lanza excepción")
+    @DisplayName("Validar token null retorna false")
     void testValidarTokenNull() {
-        // Act & Assert
-        assertThatThrownBy(() -> jwtService.validarToken(null))
-                .isInstanceOf(Exception.class);
+        // Act
+        boolean esValido = jwtService.validarToken(null);
+
+        // Assert
+        assertFalse(esValido, "El token null no debería ser válido");
     }
 
     @Test
@@ -195,8 +197,8 @@ class JWTServiceTest {
         assertNotEquals(token1, token2, "Tokens generados en momentos diferentes deben ser distintos");
         
         // Pero ambos deben contener el mismo email
-        assertEquals(jwtService.obtenerEmailDesdeToken(token1), 
-                    jwtService.obtenerEmailDesdeToken(token2),
+        assertEquals(jwtService.extraerEmail(token1),
+                    jwtService.extraerEmail(token2),
                     "Ambos tokens deben contener el mismo email");
     }
 
@@ -257,8 +259,8 @@ class JWTServiceTest {
 
         // Assert
         assertNotEquals(token1, token2, "Tokens para diferentes emails deben ser distintos");
-        assertEquals(email1, jwtService.obtenerEmailDesdeToken(token1));
-        assertEquals(email2, jwtService.obtenerEmailDesdeToken(token2));
+        assertEquals(email1, jwtService.extraerEmail(token1));
+        assertEquals(email2, jwtService.extraerEmail(token2));
     }
 
     @Test

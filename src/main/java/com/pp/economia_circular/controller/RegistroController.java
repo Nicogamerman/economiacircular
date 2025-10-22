@@ -5,6 +5,7 @@ import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,17 @@ public class RegistroController {
 
     @PostMapping("/registrar")
     public ResponseEntity<?> registrarUsuario(@RequestBody UsuarioRequest request) {
+        // Validaciones de campos requeridos
+        if (request.getNombre() == null || request.getNombre().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Nombre es requerido");
+        }
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Email es requerido");
+        }
+        if (request.getContrasena() == null || request.getContrasena().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Contraseña es requerida");
+        }
+        
         byte[] fotoBytes = null;
         if (request.getFotoBase64() != null && !request.getFotoBase64().isEmpty()) {
             fotoBytes = Base64.getDecoder().decode(request.getFotoBase64());
@@ -50,16 +62,20 @@ public class RegistroController {
 
     @GetMapping("/{id}/foto")
     public ResponseEntity<byte[]> obtenerFoto(@PathVariable Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        try {
+            Usuario usuario = usuarioRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (usuario.getFoto() == null) {
-            return ResponseEntity.notFound().build();
+            if (usuario.getFoto() == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"foto_" + usuario.getId() + ".jpg\"")
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(usuario.getFoto());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"foto_" + usuario.getId() + ".jpg\"")
-                .contentType(MediaType.IMAGE_JPEG)
-                .body(usuario.getFoto());
     }
 }

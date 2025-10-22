@@ -1,36 +1,23 @@
 package com.pp.economia_circular.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.cors.CorsConfigurationSource;
 
-@Configuration
-@EnableWebSecurity
+@TestConfiguration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class SecurityConfig {
-
-    @Autowired
-    private CorsConfigurationSource corsConfigurationSource;
+public class TestSecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors().configurationSource(corsConfigurationSource).and()
                 .csrf().disable()
                 .authorizeRequests(auth -> auth
-                        // Permitir OPTIONS para CORS preflight
-                        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Swagger UI y OpenAPI
-                        .antMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", 
-                                     "/swagger-resources/**", "/webjars/**").permitAll()
                         // Endpoints públicos
                         .antMatchers("/api/auth/**", "/api/registro/**", "/api/registrar/**", "/ping").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/events", "/api/events/upcoming", "/api/events/type/**", "/api/events/nearby").permitAll()
@@ -54,3 +41,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
