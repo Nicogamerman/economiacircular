@@ -453,7 +453,7 @@ class AuthControllerTest {
         String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
 
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
-        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioActivo);
+        when(usuarioRepository.save(any())).thenReturn(usuarioActivo);
 
         // Act & Assert
         mockMvc.perform(post("/api/auth/reset-password")
@@ -465,7 +465,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
-        verify(usuarioRepository, times(1)).save(any(Usuario.class));
+        verify(usuarioRepository, times(1)).save(any());
     }
 
     @Test
@@ -487,7 +487,7 @@ class AuthControllerTest {
 
         // Verify - No debe guardar nada
         verify(usuarioRepository, times(1)).findByEmail(emailInexistente);
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -508,7 +508,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, times(1)).findByEmail(usuarioInactivo.getEmail());
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -527,7 +527,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, never()).findByEmail(anyString());
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -546,7 +546,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, never()).findByEmail(anyString());
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -565,7 +565,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, never()).findByEmail(anyString());
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -584,7 +584,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, never()).findByEmail(anyString());
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test
@@ -595,7 +595,7 @@ class AuthControllerTest {
         String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
 
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+        when(usuarioRepository.save(any())).thenAnswer(invocation -> {
             Usuario usuario = invocation.getArgument(0);
             // Verificar que la contraseña fue encriptada (empieza con $2a$)
             assert usuario.getContrasena().startsWith("$2a$");
@@ -612,7 +612,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk());
 
         // Verify
-        verify(usuarioRepository, times(1)).save(any(Usuario.class));
+        verify(usuarioRepository, times(1)).save(any());
     }
 
     // ==================== TESTS PARA CHECK EMAIL ====================
