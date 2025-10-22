@@ -5,6 +5,7 @@ import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -14,6 +15,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JWTFilter implements Filter {
@@ -28,29 +30,35 @@ public class JWTFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        // FILTRO DESACTIVADO TEMPORALMENTE - SEGURIDAD DESHABILITADA
-        // HttpServletRequest req = (HttpServletRequest) request;
-        // String authHeader = req.getHeader("Authorization");
 
-        // if (authHeader != null && authHeader.startsWith("Bearer ")) {
-        //     String token = authHeader.substring(7);
-        //     String email = jwtService.extraerEmail(token);
+        HttpServletRequest req = (HttpServletRequest) request;
+        String authHeader = req.getHeader("Authorization");
 
-        //     if (email != null && jwtService.validarToken(token)) {
-        //         Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            String email = jwtService.extraerEmail(token);
 
-        //         if (usuario != null) {
-        //             // Creamos un UserDetails seguro solo con email y roles vacíos
-        //             User userDetails = new User(usuario.getEmail(), usuario.getContrasena(), Collections.emptyList());
+            if (email != null && jwtService.validarToken(token)) {
+                Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
-        //             UsernamePasswordAuthenticationToken authToken =
-        //                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                if (usuario != null && usuario.isActivo()) {
+                    // Crear las autoridades (roles) del usuario
+                    List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                            new SimpleGrantedAuthority("ROLE_" + usuario.getRol())
+                    );
 
-        //             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-        //             SecurityContextHolder.getContext().setAuthentication(authToken);
-        //         }
-        //     }
-        // }
+                    // Creamos un UserDetails con email y rol
+                    User userDetails = new User(usuario.getEmail(), usuario.getContrasena(), authorities);
+
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            }
+
+        }
 
         chain.doFilter(request, response);
     }
