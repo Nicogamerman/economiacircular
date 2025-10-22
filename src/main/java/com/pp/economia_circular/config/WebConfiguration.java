@@ -17,6 +17,7 @@ public class WebConfiguration {
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));  // Permite todos los orígenes con patrón
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true); // Ahora podemos usar true con allowedOriginPatterns
         configuration.setMaxAge(3600L); // Cache preflight por 1 hora
 
