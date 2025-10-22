@@ -40,26 +40,45 @@ public class AuthController {
                         .body("Contraseña es requerida");
             }
             
+            System.out.println("=== DEBUG LOGIN ===");
+            System.out.println("Email: [" + request.getEmail() + "]");
+            System.out.println("Pass recibida: [" + request.getContrasena() + "]");
+            
             Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(request.getEmail());
-
+ 
             if (usuarioOpt.isPresent()) {
                 Usuario usuario = usuarioOpt.get();
                 
+                System.out.println("Usuario encontrado: " + usuario.getEmail());
+                System.out.println("Activo: " + usuario.isActivo());
+                System.out.println("Pass en BD: [" + usuario.getContrasena() + "]");
+                System.out.println("¿Es BCrypt?: " + usuario.getContrasena().startsWith("$2"));
+                
                 // Verificar si el usuario está activo
                 if (!usuario.isActivo()) {
+                    System.out.println("Usuario INACTIVO");
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body("Usuario inactivo");
                 }
                 
                 // Verificar contraseña (tanto texto plano como encriptada)
                 boolean passwordMatches = false;
-                if (usuario.getContrasena().equals(request.getContrasena())) {
+                boolean plainMatch = usuario.getContrasena().equals(request.getContrasena());
+                boolean bcryptMatch = passwordEncoder.matches(request.getContrasena(), usuario.getContrasena());
+                
+                System.out.println("Plain match: " + plainMatch);
+                System.out.println("BCrypt match: " + bcryptMatch);
+                
+                if (plainMatch) {
                     // Contraseña en texto plano (para usuarios existentes)
                     passwordMatches = true;
-                } else if (passwordEncoder.matches(request.getContrasena(), usuario.getContrasena())) {
+                } else if (bcryptMatch) {
                     // Contraseña encriptada
                     passwordMatches = true;
                 }
+                
+                System.out.println("Match final: " + passwordMatches);
+                System.out.println("==================");
                 
                 if (passwordMatches) {
                     String token = jwtService.generarToken(usuario.getEmail());
