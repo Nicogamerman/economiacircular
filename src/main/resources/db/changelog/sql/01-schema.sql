@@ -174,22 +174,25 @@ CREATE TABLE IF NOT EXISTS vistas_articulos (
 -- Índices adicionales para optimización
 -- =====================================================
 
+-- Nota: No usamos IF NOT EXISTS porque MySQL no lo soporta para índices
+-- Liquibase controla si ya fueron ejecutados (no se repiten)
+
 -- Índices para búsquedas frecuentes en artículos
-CREATE INDEX IF NOT EXISTS idx_articulos_categoria ON articulos(categoria);
-CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado);
-CREATE INDEX IF NOT EXISTS idx_articulos_creado_en ON articulos(creado_en);
+CREATE INDEX idx_articulos_categoria ON articulos(categoria);
+CREATE INDEX idx_articulos_estado ON articulos(estado);
+CREATE INDEX idx_articulos_creado_en ON articulos(creado_en);
 
 -- Índices para mensajes
-CREATE INDEX IF NOT EXISTS idx_mensajes_estado ON mensajes(estado);
-CREATE INDEX IF NOT EXISTS idx_mensajes_creado_en ON mensajes(creado_en);
+CREATE INDEX idx_mensajes_estado ON mensajes(estado);
+CREATE INDEX idx_mensajes_creado_en ON mensajes(creado_en);
 
 -- Índices para solicitudes
-CREATE INDEX IF NOT EXISTS idx_solicitudes_estado ON solicitudes_intercambio(estado);
+CREATE INDEX idx_solicitudes_estado ON solicitudes_intercambio(estado);
 
 -- Índices para eventos
-CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date);
-CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
+CREATE INDEX idx_events_date ON events(event_date);
+CREATE INDEX idx_events_status ON events(status);
 
 -- Índices para centros
-CREATE INDEX IF NOT EXISTS idx_centers_status ON recycling_centers(status);
+CREATE INDEX idx_centers_status ON recycling_centers(status);
 
