@@ -31,7 +31,7 @@ public class EventService {
         }
         
         // Solo administradores pueden crear eventos
-        if (currentUser.getRole() != User.Role.ADMIN) {
+        if (!"ADMIN".equals(currentUser.getRol())) {
             throw new RuntimeException("Solo los administradores pueden crear eventos");
         }
         
@@ -79,7 +79,7 @@ public class EventService {
     }
     
     public EventResponseDto updateEvent(Long id, EventCreateDto updateDto) {
-        User currentUser = authService.getCurrentUser();
+        Usuario currentUser = authService.getCurrentUser();
         if (currentUser == null) {
             throw new RuntimeException("Usuario no autenticado");
         }
@@ -89,7 +89,7 @@ public class EventService {
         
         // Solo el organizador o administradores pueden editar eventos
         if (!event.getOrganizer().getId().equals(currentUser.getId()) && 
-            currentUser.getRole() != User.Role.ADMIN) {
+            !"ADMIN".equals(currentUser.getRol())) {
             throw new RuntimeException("No tienes permisos para editar este evento");
         }
         
@@ -106,7 +106,7 @@ public class EventService {
     }
     
     public void deleteEvent(Long id) {
-        User currentUser = authService.getCurrentUser();
+        Usuario currentUser = authService.getCurrentUser();
         if (currentUser == null) {
             throw new RuntimeException("Usuario no autenticado");
         }
@@ -116,7 +116,7 @@ public class EventService {
         
         // Solo el organizador o administradores pueden eliminar eventos
         if (!event.getOrganizer().getId().equals(currentUser.getId()) && 
-            currentUser.getRole() != User.Role.ADMIN) {
+            !"ADMIN".equals(currentUser.getRol())) {
             throw new RuntimeException("No tienes permisos para eliminar este evento");
         }
         
@@ -136,7 +136,7 @@ public class EventService {
         dto.setEventType(event.getEventType());
         dto.setStatus(event.getStatus());
         dto.setOrganizerId(event.getOrganizer().getId());
-        dto.setOrganizerName(event.getOrganizer().getUsername());
+        dto.setOrganizerName(event.getOrganizer().getEmail());
         dto.setCreatedAt(event.getCreatedAt());
         dto.setUpdatedAt(event.getUpdatedAt());
         return dto;

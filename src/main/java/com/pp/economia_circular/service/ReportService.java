@@ -1,11 +1,12 @@
 package com.pp.economia_circular.service;
 
 import com.pp.economia_circular.DTO.ReportDto;
-import com.pp.economia_circular.entity.Article;
-import com.pp.economia_circular.entity.Message;
 import com.pp.economia_circular.entity.Usuario;
+import com.pp.economia_circular.entity.Articulo;
+import com.pp.economia_circular.entity.Mensaje;
 import com.pp.economia_circular.repositories.ArticleRepository;
-import com.pp.economia_circular.repositories.MessageRepository;
+import com.pp.economia_circular.repositories.MensajeRepository;
+import com.pp.economia_circular.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,13 +19,13 @@ import java.util.Map;
 public class ReportService {
     
     @Autowired
-    private Usuario userRepository;
+    private UsuarioRepository usuarioRepository;
     
     @Autowired
     private ArticleRepository articleRepository;
     
     @Autowired
-    private MessageRepository messageRepository;
+    private MensajeRepository mensajeRepository;
     
     public ReportDto generateUserReport() {
         ReportDto report = new ReportDto();
@@ -34,23 +35,14 @@ public class ReportService {
         Map<String, Object> data = new HashMap<>();
         
         // Total de usuarios
-        long totalUsers = userRepository.count();
+        long totalUsers = usuarioRepository.count();
         data.put("totalUsers", totalUsers);
         
         // Usuarios activos
-        long activeUsers = userRepository.findByStatus(User.UserStatus.ACTIVE).size();
+        long activeUsers = usuarioRepository.findAll().stream()
+                .filter(Usuario::isActivo)
+                .count();
         data.put("activeUsers", activeUsers);
-        
-        // Usuarios verificados
-        long verifiedUsers = userRepository.findVerifiedUsers().size();
-        data.put("verifiedUsers", verifiedUsers);
-        
-        // Usuarios por rol
-        Map<String, Long> usersByRole = new HashMap<>();
-        usersByRole.put("USER", (long) userRepository.findByRole(User.Role.USER).size());
-        usersByRole.put("ADMIN", (long) userRepository.findByRole(User.Role.ADMIN).size());
-        usersByRole.put("MODERATOR", (long) userRepository.findByRole(User.Role.MODERATOR).size());
-        data.put("usersByRole", usersByRole);
         
         report.setData(data);
         return report;
@@ -68,27 +60,27 @@ public class ReportService {
         data.put("totalArticles", totalArticles);
         
         // Artículos disponibles
-        long availableArticles = articleRepository.findByStatus(Article.ArticleStatus.AVAILABLE).size();
+        long availableArticles = articleRepository.findByEstado(Articulo.EstadoArticulo.DISPONIBLE).size();
         data.put("availableArticles", availableArticles);
         
         // Artículos intercambiados
-        long exchangedArticles = articleRepository.findByStatus(Article.ArticleStatus.EXCHANGED).size();
+        long exchangedArticles = articleRepository.findByEstado(Articulo.EstadoArticulo.INTERCAMBIADO).size();
         data.put("exchangedArticles", exchangedArticles);
         
         // Artículos por categoría
         Map<String, Long> articlesByCategory = new HashMap<>();
-        for (Article.ArticleCategory category : Article.ArticleCategory.values()) {
+        for (Articulo.CategoriaArticulo category : Articulo.CategoriaArticulo.values()) {
             articlesByCategory.put(category.name(), 
-                (long) articleRepository.findByCategoryAndStatus(category, Article.ArticleStatus.AVAILABLE).size());
+                (long) articleRepository.findByCategoriaAndEstado(category, Articulo.EstadoArticulo.DISPONIBLE).size());
         }
         data.put("articlesByCategory", articlesByCategory);
         
         // Artículos por condición
         Map<String, Long> articlesByCondition = new HashMap<>();
-        for (Article.ArticleCondition condition : Article.ArticleCondition.values()) {
+        for (Articulo.CondicionArticulo condition : Articulo.CondicionArticulo.values()) {
             articlesByCondition.put(condition.name(), 
-                (long) articleRepository.findByStatus(Article.ArticleStatus.AVAILABLE).stream()
-                    .filter(a -> a.getCondition() == condition)
+                (long) articleRepository.findByEstado(Articulo.EstadoArticulo.DISPONIBLE).stream()
+                    .filter(a -> a.getCondicion() == condition)
                     .count());
         }
         data.put("articlesByCondition", articlesByCondition);
@@ -105,12 +97,12 @@ public class ReportService {
         Map<String, Object> data = new HashMap<>();
         
         // Usuarios con más artículos
-        List<Usuario> users = userRepository.findAll();
+        List<Usuario> users = usuarioRepository.findAll();
         Map<String, Long> usersByArticleCount = new HashMap<>();
-        for (User user : users) {
+        for (Usuario user : users) {
             long articleCount = articleRepository.countAvailableArticlesByUser(user.getId());
             if (articleCount > 0) {
-                usersByArticleCount.put(user.getUsername(), articleCount);
+                usersByArticleCount.put(user.getEmail(), articleCount);
             }
         }
         data.put("usersByArticleCount", usersByArticleCount);
@@ -127,16 +119,16 @@ public class ReportService {
         Map<String, Object> data = new HashMap<>();
         
         // Artículos más consultados (simulado con artículos más recientes)
-        List<Article> recentArticles = articleRepository.findAvailableArticles();
+        List<Articulo> recentArticles = articleRepository.findAvailableArticles();
         Map<String, Object> popularArticles = new HashMap<>();
         
         for (int i = 0; i < Math.min(10, recentArticles.size()); i++) {
-            Article article = recentArticles.get(i);
+            Articulo article = recentArticles.get(i);
             Map<String, Object> articleInfo = new HashMap<>();
-            articleInfo.put("title", article.getTitle());
-            articleInfo.put("category", article.getCategory());
-            articleInfo.put("user", article.getUser().getUsername());
-            articleInfo.put("createdAt", article.getCreatedAt());
+            articleInfo.put("title", article.getTitulo());
+            articleInfo.put("category", article.getCategoria());
+            articleInfo.put("user", article.getUsuario().getEmail());
+            articleInfo.put("createdAt", article.getCreadoEn());
             popularArticles.put("article_" + (i + 1), articleInfo);
         }
         
@@ -153,15 +145,15 @@ public class ReportService {
         Map<String, Object> data = new HashMap<>();
         
         // Total de mensajes
-        long totalMessages = messageRepository.count();
+        long totalMessages = mensajeRepository.count();
         data.put("totalMessages", totalMessages);
         
         // Mensajes no leídos
-        long unreadMessages = messageRepository.findByStatus(Message.MessageStatus.READ).size();
+        long unreadMessages = mensajeRepository.findByEstado(Mensaje.EstadoMensaje.NO_LEIDO).size();
         data.put("unreadMessages", unreadMessages);
         
         // Mensajes leídos
-        long readMessages = messageRepository.findByStatus(Message.MessageStatus.UNREAD).size();
+        long readMessages = mensajeRepository.findByEstado(Mensaje.EstadoMensaje.LEIDO).size();
         data.put("readMessages", readMessages);
         
         report.setData(data);
@@ -176,7 +168,7 @@ public class ReportService {
         Map<String, Object> data = new HashMap<>();
         
         // Artículos intercambiados (evitando compras nuevas)
-        long exchangedArticles = articleRepository.findByStatus(Article.ArticleStatus.EXCHANGED).size();
+        long exchangedArticles = articleRepository.findByEstado(Articulo.EstadoArticulo.INTERCAMBIADO).size();
         data.put("exchangedArticles", exchangedArticles);
         
         // Estimación de impacto ambiental

@@ -1,8 +1,13 @@
 package com.pp.economia_circular.service;
 
+import com.pp.economia_circular.entity.Usuario;
+import com.pp.economia_circular.repositories.UsuarioRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -11,6 +16,9 @@ import java.util.Date;
 public class JWTService {
 
     private final String SECRET_KEY = "clave-secreta-super-segura-para-economia-circular-2024";
+    
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     public String generarToken(String email) {
         return Jwts.builder()
@@ -37,6 +45,19 @@ public class JWTService {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+    
+    public Usuario getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+                String email = authentication.getName();
+                return usuarioRepository.findByEmail(email).orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.pp.economia_circular.DTO;
 
 
-import com.pp.economia_circular.entity.Article;
+import com.pp.economia_circular.entity.Articulo;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -18,16 +18,16 @@ public class ArticleCreateDto {
     private String description;
     
     @NotNull(message = "La categoría es obligatoria")
-    private Article.ArticleCategory category;
+    private Articulo.CategoriaArticulo category;
     
     @NotNull(message = "La condición es obligatoria")
-    private Article.ArticleCondition condition;
+    private Articulo.CondicionArticulo condition;
     
     // Constructors
     public ArticleCreateDto() {}
     
-    public ArticleCreateDto(String title, String description, Article.ArticleCategory category, 
-                           Article.ArticleCondition condition) {
+    public ArticleCreateDto(String title, String description, Articulo.CategoriaArticulo category, 
+                           Articulo.CondicionArticulo condition) {
         this.title = title;
         this.description = description;
         this.category = category;
@@ -41,9 +41,9 @@ public class ArticleCreateDto {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     
-    public Article.ArticleCategory getCategory() { return category; }
-    public void setCategory(Article.ArticleCategory category) { this.category = category; }
+    public Articulo.CategoriaArticulo getCategory() { return category; }
+    public void setCategory(Articulo.CategoriaArticulo category) { this.category = category; }
     
-    public Article.ArticleCondition getCondition() { return condition; }
-    public void setCondition(Article.ArticleCondition condition) { this.condition = condition; }
+    public Articulo.CondicionArticulo getCondition() { return condition; }
+    public void setCondition(Articulo.CondicionArticulo condition) { this.condition = condition; }
 }

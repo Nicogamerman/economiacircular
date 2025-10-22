@@ -4,7 +4,7 @@ package com.pp.economia_circular.controller;
 import com.pp.economia_circular.DTO.ArticleCreateDto;
 import com.pp.economia_circular.DTO.ArticleResponseDto;
 import com.pp.economia_circular.DTO.ArticleSearchDto;
-import com.pp.economia_circular.entity.Article;
+import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -54,8 +54,8 @@ public class ArticleController {
     @GetMapping("/search")
     public ResponseEntity<?> searchArticles(
             @RequestParam(required = false) String title,
-            @RequestParam(required = false) Article.ArticleCategory category,
-            @RequestParam(required = false) Article.ArticleCondition condition,
+            @RequestParam(required = false) Articulo.CategoriaArticulo category,
+            @RequestParam(required = false) Articulo.CondicionArticulo condition,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
@@ -69,7 +69,7 @@ public class ArticleController {
     }
     
     @GetMapping("/category/{category}")
-    public ResponseEntity<?> getArticlesByCategory(@PathVariable Article.ArticleCategory category) {
+    public ResponseEntity<?> getArticlesByCategory(@PathVariable Articulo.CategoriaArticulo category) {
         try {
             List<ArticleResponseDto> articles = articleService.getArticlesByCategory(category);
             return ResponseEntity.ok(articles);

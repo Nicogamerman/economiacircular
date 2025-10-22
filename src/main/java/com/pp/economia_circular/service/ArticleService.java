@@ -4,8 +4,8 @@ package com.pp.economia_circular.service;
 import com.pp.economia_circular.DTO.ArticleCreateDto;
 import com.pp.economia_circular.DTO.ArticleResponseDto;
 import com.pp.economia_circular.DTO.ArticleSearchDto;
+import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.entity.Usuario;
-import com.pp.economia_circular.entity.Article;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,19 +32,19 @@ public class ArticleService {
             throw new RuntimeException("Usuario no autenticado");
         }
         
-        Article article = new Article();
-        article.setTitle(createDto.getTitle());
-        article.setDescription(createDto.getDescription());
-        article.setCategory(createDto.getCategory());
-        article.setCondition(createDto.getCondition());
-        article.setUser(currentUser);
+        Articulo article = new Articulo();
+        article.setTitulo(createDto.getTitle());
+        article.setDescripcion(createDto.getDescription());
+        article.setCategoria(createDto.getCategory());
+        article.setCondicion(createDto.getCondition());
+        article.setUsuario(currentUser);
         
-        Article savedArticle = articleRepository.save(article);
+        Articulo savedArticle = articleRepository.save(article);
         return convertToResponseDto(savedArticle);
     }
     
     public ArticleResponseDto getArticleById(Long id) {
-        Article article = articleRepository.findById(id)
+        Articulo article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
         return convertToResponseDto(article);
     }
@@ -61,7 +61,7 @@ public class ArticleService {
     }
     
     public List<ArticleResponseDto> getArticlesByUser(Long userId) {
-        return articleRepository.findByUser_Id(userId).stream()
+        return articleRepository.findByUsuario_Id(userId).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
     }
@@ -74,8 +74,8 @@ public class ArticleService {
         return getArticlesByUser(currentUser.getId());
     }
     
-    public List<ArticleResponseDto> getArticlesByCategory(Article.ArticleCategory category) {
-        return articleRepository.findByCategoryAndStatus(category, Article.ArticleStatus.AVAILABLE).stream()
+    public List<ArticleResponseDto> getArticlesByCategory(Articulo.CategoriaArticulo category) {
+        return articleRepository.findByCategoriaAndEstado(category, Articulo.EstadoArticulo.DISPONIBLE).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
     }
@@ -95,38 +95,38 @@ public class ArticleService {
             throw new RuntimeException("Usuario no autenticado");
         }
         
-        Article article = articleRepository.findById(id)
+        Articulo article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
         
         // Verificar que el usuario sea el propietario del artículo
-        if (!article.getUser().getId().equals(currentUser.getId())) {
+        if (!article.getUsuario().getId().equals(currentUser.getId())) {
             throw new RuntimeException("No tienes permisos para editar este artículo");
         }
         
-        article.setTitle(updateDto.getTitle());
-        article.setDescription(updateDto.getDescription());
-        article.setCategory(updateDto.getCategory());
-        article.setCondition(updateDto.getCondition());
+        article.setTitulo(updateDto.getTitle());
+        article.setDescripcion(updateDto.getDescription());
+        article.setCategoria(updateDto.getCategory());
+        article.setCondicion(updateDto.getCondition());
         
-        Article updatedArticle = articleRepository.save(article);
+        Articulo updatedArticle = articleRepository.save(article);
         return convertToResponseDto(updatedArticle);
     }
     
     public void deleteArticle(Long id) {
-        User currentUser = authService.getCurrentUser();
+        Usuario currentUser = authService.getCurrentUser();
         if (currentUser == null) {
             throw new RuntimeException("Usuario no autenticado");
         }
         
-        Article article = articleRepository.findById(id)
+        Articulo article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
         
         // Verificar que el usuario sea el propietario del artículo
-        if (!article.getUser().getId().equals(currentUser.getId())) {
+        if (!article.getUsuario().getId().equals(currentUser.getId())) {
             throw new RuntimeException("No tienes permisos para eliminar este artículo");
         }
         
-        article.setStatus(Article.ArticleStatus.DELETED);
+        article.setEstado(Articulo.EstadoArticulo.ELIMINADO);
         articleRepository.save(article);
     }
     
@@ -136,18 +136,18 @@ public class ArticleService {
                 .collect(Collectors.toList());
     }
     
-    private ArticleResponseDto convertToResponseDto(Article article) {
+    private ArticleResponseDto convertToResponseDto(Articulo article) {
         ArticleResponseDto dto = new ArticleResponseDto();
         dto.setId(article.getId());
-        dto.setTitle(article.getTitle());
-        dto.setDescription(article.getDescription());
-        dto.setCategory(article.getCategory());
-        dto.setCondition(article.getCondition());
-        dto.setStatus(article.getStatus());
-        dto.setUserId(article.getUser().getId());
-        dto.setUsername(article.getUser().getUsername());
-        dto.setCreatedAt(article.getCreatedAt());
-        dto.setUpdatedAt(article.getUpdatedAt());
+        dto.setTitle(article.getTitulo());
+        dto.setDescription(article.getDescripcion());
+        dto.setCategory(article.getCategoria());
+        dto.setCondition(article.getCondicion());
+        dto.setStatus(article.getEstado());
+        dto.setUserId(article.getUsuario().getId());
+        dto.setUsername(article.getUsuario().getEmail());
+        dto.setCreatedAt(article.getCreadoEn());
+        dto.setUpdatedAt(article.getActualizadoEn());
         return dto;
     }
 }
