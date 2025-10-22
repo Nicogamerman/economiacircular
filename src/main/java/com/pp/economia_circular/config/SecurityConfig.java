@@ -20,10 +20,15 @@ public class SecurityConfig {
                 .cors().and()
                 .csrf().disable()
                 .authorizeRequests(auth -> auth
+                        // Swagger UI y OpenAPI
+                        .antMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", 
+                                     "/swagger-resources/**", "/webjars/**").permitAll()
+                        // Endpoints públicos
                         .antMatchers("/api/auth/**", "/api/registro/**", "/ping").permitAll()
                         .antMatchers("/api/events", "/api/events/upcoming", "/api/events/type/**", "/api/events/nearby").permitAll()
                         .antMatchers("/api/articles", "/api/articles/**").permitAll()
                         .antMatchers("/api/recycling-centers", "/api/recycling-centers/**").permitAll()
+                        // Resto requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling()
