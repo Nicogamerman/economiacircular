@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -95,6 +96,99 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error interno del servidor: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint para resetear la contraseña de un usuario
+     * POST /api/auth/reset-password
+     * Body: { "email": "usuario@ejemplo.com", "newPassword": "NuevaPassword123!" }
+     * 
+     * NOTA: En producción esto debería:
+     * 1. Enviar un email con token de verificación
+     * 2. Validar el token antes de permitir el cambio
+     * 3. Tener rate limiting para evitar abuso
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String newPassword = request.get("newPassword");
+
+            // Validaciones
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Email es requerido");
+            }
+
+            if (newPassword == null || newPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Nueva contraseña es requerida");
+            }
+
+            // Validar formato de contraseña (mínimo 6 caracteres)
+            if (newPassword.length() < 6) {
+                return ResponseEntity.badRequest().body("La contraseña debe tener al menos 6 caracteres");
+            }
+
+            // Buscar usuario
+            Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(email);
+            if (!usuarioOpt.isPresent()) {
+                // Por seguridad, no revelar si el usuario existe o no
+                return ResponseEntity.ok("Si el email existe, la contraseña ha sido actualizada");
+            }
+
+            Usuario usuario = usuarioOpt.get();
+
+            // Verificar que el usuario esté activo
+            if (!usuario.isActivo()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Usuario inactivo");
+            }
+
+            // Encriptar la nueva contraseña
+            String hashedPassword = passwordEncoder.encode(newPassword);
+            usuario.setContrasena(hashedPassword);
+            usuario.setActualizadoEn(java.time.LocalDateTime.now());
+            usuarioRepo.save(usuario);
+
+            System.out.println("=== PASSWORD RESET ===");
+            System.out.println("Email: " + email);
+            System.out.println("Nueva contraseña establecida exitosamente");
+            System.out.println("=====================");
+
+            // En producción, aquí enviarías un email de confirmación
+            return ResponseEntity.ok("Contraseña actualizada exitosamente");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al resetear contraseña: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint para verificar si un email existe (útil para validación en frontend)
+     * POST /api/auth/check-email
+     * Body: { "email": "usuario@ejemplo.com" }
+     */
+    @PostMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Email es requerido");
+            }
+
+            Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(email);
+            
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("exists", usuarioOpt.isPresent());
+            response.put("active", usuarioOpt.map(Usuario::isActivo).orElse(false));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al verificar email: " + e.getMessage());
         }
     }
 }

@@ -442,5 +442,293 @@ class AuthControllerTest {
         verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
         verify(jwtService, never()).generarToken(anyString());
     }
+
+    // ==================== TESTS PARA RESET PASSWORD ====================
+
+    @Test
+    @DisplayName("Reset password exitoso")
+    void testResetPasswordExitoso() throws Exception {
+        // Arrange
+        String newPassword = "NewPassword123!";
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
+
+        when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuarioActivo);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string("Contraseña actualizada exitosamente"));
+
+        // Verify
+        verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
+        verify(usuarioRepository, times(1)).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password con email inexistente retorna mensaje genérico por seguridad")
+    void testResetPasswordEmailInexistente() throws Exception {
+        // Arrange
+        String emailInexistente = "noexiste@test.com";
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\"}", emailInexistente);
+
+        when(usuarioRepository.findByEmail(emailInexistente)).thenReturn(Optional.empty());
+
+        // Act & Assert - Por seguridad, no revelar si el email existe
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string("Si el email existe, la contraseña ha sido actualizada"));
+
+        // Verify - No debe guardar nada
+        verify(usuarioRepository, times(1)).findByEmail(emailInexistente);
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password con usuario inactivo debe fallar")
+    void testResetPasswordUsuarioInactivo() throws Exception {
+        // Arrange
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\"}", usuarioInactivo.getEmail());
+
+        when(usuarioRepository.findByEmail(usuarioInactivo.getEmail())).thenReturn(Optional.of(usuarioInactivo));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string("Usuario inactivo"));
+
+        // Verify
+        verify(usuarioRepository, times(1)).findByEmail(usuarioInactivo.getEmail());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password sin email debe fallar")
+    void testResetPasswordSinEmail() throws Exception {
+        // Arrange
+        String requestBody = "{\"newPassword\":\"NewPass123!\"}";
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email es requerido"));
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password sin nueva contraseña debe fallar")
+    void testResetPasswordSinNuevaContrasena() throws Exception {
+        // Arrange
+        String requestBody = String.format("{\"email\":\"%s\"}", TEST_EMAIL);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Nueva contraseña es requerida"));
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password con contraseña muy corta debe fallar")
+    void testResetPasswordContrasenaMuyCorta() throws Exception {
+        // Arrange
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"12345\"}", TEST_EMAIL);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("La contraseña debe tener al menos 6 caracteres"));
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password con email vacío debe fallar")
+    void testResetPasswordEmailVacio() throws Exception {
+        // Arrange
+        String requestBody = "{\"email\":\"\",\"newPassword\":\"NewPass123!\"}";
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email es requerido"));
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+        verify(usuarioRepository, never()).save(any(Usuario.class));
+    }
+
+    @Test
+    @DisplayName("Reset password encripta correctamente la nueva contraseña")
+    void testResetPasswordEncriptaCorrectamente() throws Exception {
+        // Arrange
+        String newPassword = "NewPassword123!";
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
+
+        when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
+        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> {
+            Usuario usuario = invocation.getArgument(0);
+            // Verificar que la contraseña fue encriptada (empieza con $2a$)
+            assert usuario.getContrasena().startsWith("$2a$");
+            // Verificar que NO es la contraseña en texto plano
+            assert !usuario.getContrasena().equals(newPassword);
+            return usuario;
+        });
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+        // Verify
+        verify(usuarioRepository, times(1)).save(any(Usuario.class));
+    }
+
+    // ==================== TESTS PARA CHECK EMAIL ====================
+
+    @Test
+    @DisplayName("Check email con usuario existente y activo")
+    void testCheckEmailExistenteActivo() throws Exception {
+        // Arrange
+        String requestBody = String.format("{\"email\":\"%s\"}", TEST_EMAIL);
+
+        when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/check-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.exists").value(true))
+                .andExpect(jsonPath("$.active").value(true));
+
+        // Verify
+        verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
+    }
+
+    @Test
+    @DisplayName("Check email con usuario existente pero inactivo")
+    void testCheckEmailExistenteInactivo() throws Exception {
+        // Arrange
+        String requestBody = String.format("{\"email\":\"%s\"}", usuarioInactivo.getEmail());
+
+        when(usuarioRepository.findByEmail(usuarioInactivo.getEmail())).thenReturn(Optional.of(usuarioInactivo));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/check-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.exists").value(true))
+                .andExpect(jsonPath("$.active").value(false));
+
+        // Verify
+        verify(usuarioRepository, times(1)).findByEmail(usuarioInactivo.getEmail());
+    }
+
+    @Test
+    @DisplayName("Check email con email inexistente")
+    void testCheckEmailInexistente() throws Exception {
+        // Arrange
+        String emailInexistente = "noexiste@test.com";
+        String requestBody = String.format("{\"email\":\"%s\"}", emailInexistente);
+
+        when(usuarioRepository.findByEmail(emailInexistente)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/check-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.exists").value(false))
+                .andExpect(jsonPath("$.active").value(false));
+
+        // Verify
+        verify(usuarioRepository, times(1)).findByEmail(emailInexistente);
+    }
+
+    @Test
+    @DisplayName("Check email sin email debe fallar")
+    void testCheckEmailSinEmail() throws Exception {
+        // Arrange
+        String requestBody = "{}";
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/check-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email es requerido"));
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    @DisplayName("Check email con email vacío debe fallar")
+    void testCheckEmailVacio() throws Exception {
+        // Arrange
+        String requestBody = "{\"email\":\"\"}";
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/check-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email es requerido"));
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    @DisplayName("Check email con formato JSON inválido")
+    void testCheckEmailJsonInvalido() throws Exception {
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/check-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{invalid json"))
+                .andDo(print())
+                .andExpect(status().is4xxClientError());
+
+        // Verify
+        verify(usuarioRepository, never()).findByEmail(anyString());
+    }
 }
 
