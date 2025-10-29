@@ -87,6 +87,17 @@ public class EventController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getEvent(@PathVariable Long id) {
+        try {
+            Event event = eventService.getEvent(id);
+            return ResponseEntity.ok(event);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

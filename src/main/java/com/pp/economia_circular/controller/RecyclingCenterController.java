@@ -42,7 +42,18 @@ public class RecyclingCenterController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        try {
+            RecyclingCenter centers = recyclingCenterService.getById(id);
+            return ResponseEntity.ok(centers);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/type/{centerType}")
     public ResponseEntity<?> getCentersByType(@PathVariable RecyclingCenter.CenterType centerType) {
         try {

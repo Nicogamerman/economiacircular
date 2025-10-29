@@ -67,7 +67,11 @@ public class EventService {
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
     }
-    
+
+    public Event getEvent(Long id) {
+        return eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+    }
+
     public List<EventResponseDto> getEventsNearLocation(Double latitude, Double longitude, Double radiusKm) {
         // Implementación simplificada - en producción usarías una consulta espacial
         return eventRepository.findByStatus(Event.EventStatus.ACTIVE).stream()

@@ -82,7 +82,8 @@ public class AuthController {
                 System.out.println("==================");
                 
                 if (passwordMatches) {
-                    String token = jwtService.generarToken(usuario.getEmail());
+                    // Generar token con el rol del usuario
+                    String token = jwtService.generarToken(usuario.getEmail(), usuario.getRol());
                     AuthResponse response = AuthResponse.builder()
                             .token(token)
                             .build();
@@ -146,6 +147,9 @@ public class AuthController {
 
             // Encriptar la nueva contraseña
             String hashedPassword = passwordEncoder.encode(newPassword);
+            if (hashedPassword.equals(usuarioOpt.get().getContrasena())){
+                return ResponseEntity.badRequest().body("La contraseña debe ser diferente a la anterior.");
+            }
             usuario.setContrasena(hashedPassword);
             usuario.setActualizadoEn(java.time.LocalDateTime.now());
             usuarioRepo.save(usuario);
@@ -189,6 +193,54 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al verificar email: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint de debug para decodificar un token JWT
+     * POST /api/auth/decode-token
+     * Body: { "token": "eyJhbGci..." }
+     * 
+     * Este endpoint es útil para desarrollo/debug
+     */
+    @PostMapping("/decode-token")
+    public ResponseEntity<?> decodeToken(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+
+            if (token == null || token.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Token es requerido");
+            }
+
+            // Verificar si el token es válido primero
+            if (!jwtService.validarToken(token)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Token inválido o expirado");
+            }
+
+            // Extraer claims del token
+            String email = jwtService.extraerEmail(token);
+            String rol = jwtService.extraerRol(token);
+            java.util.Map<String, Object> claims = jwtService.extraerClaims(token);
+
+            // Crear respuesta con la información decodificada
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("email", email);
+            response.put("rol", rol);
+            response.put("claims", claims);
+            response.put("valid", true);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("email", null);
+            errorResponse.put("rol", null);
+            errorResponse.put("claims", null);
+            errorResponse.put("valid", false);
+            errorResponse.put("error", "Token inválido: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
 }
