@@ -1,0 +1,64 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-schema
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/01-schema.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS vistas_articulos;
+        - sql: DROP TABLE IF EXISTS solicitudes_intercambio;
+        - sql: DROP TABLE IF EXISTS mensajes;
+        - sql: DROP TABLE IF EXISTS imagenes_articulos;
+        - sql: DROP TABLE IF EXISTS articulos;
+        - sql: DROP TABLE IF EXISTS events;
+        - sql: DROP TABLE IF EXISTS recycling_centers;
+        - sql: DROP TABLE IF EXISTS taller;
+        - sql: DROP TABLE IF EXISTS usuario;
+
+  - changeSet:
+      id: 2-seed-data-produccion
+      author: economia-circular
+      context: prod
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/02-seed-data-produccion.sql
+            splitStatements: true
+            stripComments: false
+      rollback:
+        - sql: SET FOREIGN_KEY_CHECKS = 0;
+        - sql: TRUNCATE TABLE vistas_articulos;
+        - sql: TRUNCATE TABLE solicitudes_intercambio;
+        - sql: TRUNCATE TABLE mensajes;
+        - sql: TRUNCATE TABLE imagenes_articulos;
+        - sql: TRUNCATE TABLE articulos;
+        - sql: TRUNCATE TABLE events;
+        - sql: TRUNCATE TABLE recycling_centers;
+        - sql: TRUNCATE TABLE taller;
+        - sql: TRUNCATE TABLE usuario;
+        - sql: SET FOREIGN_KEY_CHECKS = 1;
+
+  - changeSet:
+      id: 2-seed-data-desarrollo
+      author: economia-circular
+      context: dev
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/02-seed-data-desarrollo.sql
+            splitStatements: true
+            stripComments: false
+      rollback:
+        - sql: SET FOREIGN_KEY_CHECKS = 0;
+        - sql: TRUNCATE TABLE vistas_articulos;
+        - sql: TRUNCATE TABLE solicitudes_intercambio;
+        - sql: TRUNCATE TABLE mensajes;
+        - sql: TRUNCATE TABLE imagenes_articulos;
+        - sql: TRUNCATE TABLE articulos;
+        - sql: TRUNCATE TABLE events;
+        - sql: TRUNCATE TABLE recycling_centers;
+        - sql: TRUNCATE TABLE taller;
+        - sql: TRUNCATE TABLE usuario;
+        - sql: SET FOREIGN_KEY_CHECKS = 1;
+

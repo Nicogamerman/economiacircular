@@ -1,15 +1,18 @@
 package com.pp.economia_circular.DTO;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
-@Getter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthRequest {
+public class UsuarioRequest {
+    private String nombre;
+    private String apellido;
     private String email;
     private String contrasena;
+    private String rol;
+    private String domicilio;
+    private String fotoBase64;
 }

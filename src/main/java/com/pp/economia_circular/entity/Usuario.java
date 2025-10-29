@@ -2,22 +2,33 @@ package com.pp.economia_circular.entity;
 
 import lombok.*;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
 @Entity
+@Builder
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nombre;
+    private String apellido;
     private String email;
     private String contrasena;
     private String rol;
+
+    private String domicilio;
+
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] foto;
+
+    private boolean activo = true;
+    private LocalDateTime creadoEn;
+    private LocalDateTime actualizadoEn;
 }

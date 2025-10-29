@@ -43,9 +43,14 @@ public class UsuarioController {
         return usuarioRepository.findById(id)
                 .map(usuario -> {
                     usuario.setNombre(datosActualizados.getNombre());
+                    usuario.setApellido(datosActualizados.getApellido());
                     usuario.setEmail(datosActualizados.getEmail());
                     usuario.setContrasena(datosActualizados.getContrasena());
                     usuario.setRol(datosActualizados.getRol());
+                    usuario.setDomicilio(datosActualizados.getDomicilio());
+                    usuario.setFoto(datosActualizados.getFoto());
+                    usuario.setActivo(datosActualizados.isActivo());
+                    usuario.setActualizadoEn(java.time.LocalDateTime.now());
                     return ResponseEntity.ok(usuarioRepository.save(usuario));
                 })
                 .orElse(ResponseEntity.notFound().build());

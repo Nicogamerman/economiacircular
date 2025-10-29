@@ -1,0 +1,43 @@
+steps:
+  # 1️⃣ Compilar el proyecto con Maven (sin tests)
+  - name: 'gcr.io/cloud-builders/mvn'
+    args: ['clean', 'package', '-DskipTests']
+
+  # 2️⃣ Construir la imagen Docker
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/economia-circular-470222/economia-circular', '.']
+
+  # 3️⃣ Subir la imagen a Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/economia-circular-470222/economia-circular']
+
+  # 4️⃣ Desplegar en Cloud Run y asociar Cloud SQL
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'economiacircular'
+      - '--image'
+      - 'gcr.io/economia-circular-470222/economia-circular'
+      - '--platform'
+      - 'managed'
+      - '--region'
+      - 'us-central1'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'SPRING_DATASOURCE_URL=jdbc:mysql://google/economia-circular?cloudSqlInstance=economia-circular-470222:us-central1:root&socketFactory=com.google.cloud.sql.mysql.SocketFactory'
+      - '--set-env-vars'
+      - 'SPRING_DATASOURCE_USERNAME=user'
+      - '--set-env-vars'
+      - 'SPRING_DATASOURCE_PASSWORD=PiratA.22'
+      - '--add-cloudsql-instances'
+      - 'economia-circular-470222:us-central1:root'
+      - '--timeout'
+      - '10m'
+
+images:
+  - 'gcr.io/economia-circular-470222/economia-circular'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
