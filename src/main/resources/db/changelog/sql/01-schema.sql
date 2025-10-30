@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS events (
   created_at DATETIME,
   updated_at DATETIME,
   PRIMARY KEY (id),
-  KEY fk_articulos_usuario (usuario_id),
-  CONSTRAINT fk_articulos_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
+  KEY fk_events_usuario (usuario_id),
+  CONSTRAINT fk_events_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
