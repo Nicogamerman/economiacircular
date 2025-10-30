@@ -43,7 +43,7 @@ public class EventService {
         event.setLatitude(createDto.getLatitude());
         event.setLongitude(createDto.getLongitude());
         event.setEventType(createDto.getEventType());
-        event.setOrganizer(currentUser);
+        event.setUsuario(currentUser);
         
         Event savedEvent = eventRepository.save(event);
         return convertToResponseDto(savedEvent);
@@ -92,7 +92,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
         
         // Solo el organizador o administradores pueden editar eventos
-        if (!event.getOrganizer().getId().equals(currentUser.getId()) && 
+        if (!event.getUsuario().getId().equals(currentUser.getId()) &&
             !"ADMIN".equals(currentUser.getRol())) {
             throw new RuntimeException("No tienes permisos para editar este evento");
         }
@@ -119,7 +119,7 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException("Evento no encontrado"));
         
         // Solo el organizador o administradores pueden eliminar eventos
-        if (!event.getOrganizer().getId().equals(currentUser.getId()) && 
+        if (!event.getUsuario().getId().equals(currentUser.getId()) &&
             !"ADMIN".equals(currentUser.getRol())) {
             throw new RuntimeException("No tienes permisos para eliminar este evento");
         }
@@ -139,8 +139,8 @@ public class EventService {
         dto.setLongitude(event.getLongitude());
         dto.setEventType(event.getEventType());
         dto.setStatus(event.getStatus());
-        dto.setOrganizerId(event.getOrganizer().getId());
-        dto.setOrganizerName(event.getOrganizer().getEmail());
+        dto.setOrganizerId(event.getUsuario().getId());
+        dto.setOrganizerName(event.getUsuario().getEmail());
         dto.setCreatedAt(event.getCreatedAt());
         dto.setUpdatedAt(event.getUpdatedAt());
         return dto;

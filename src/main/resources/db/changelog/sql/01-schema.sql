@@ -84,12 +84,12 @@ CREATE TABLE IF NOT EXISTS events (
   longitude DOUBLE,
   event_type VARCHAR(50),
   status VARCHAR(50) DEFAULT 'ACTIVE',
-  organizer_id BIGINT NOT NULL,
+  usuario_id BIGINT NOT NULL,
   created_at DATETIME,
   updated_at DATETIME,
   PRIMARY KEY (id),
-  KEY fk_events_organizer (organizer_id),
-  CONSTRAINT fk_events_organizer FOREIGN KEY (organizer_id) REFERENCES usuario (id)
+  KEY fk_articulos_usuario (usuario_id),
+  CONSTRAINT fk_articulos_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================

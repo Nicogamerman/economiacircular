@@ -1,8 +1,6 @@
 package com.pp.economia_circular.entity;
 
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -43,7 +41,7 @@ public class Event {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
-    private Usuario organizer;
+    private Usuario usuario;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -58,14 +56,14 @@ public class Event {
     }
     
     public Event(String eventName, String description, LocalDateTime eventDate, 
-                 String location, EventType eventType, Usuario organizer) {
+                 String location, EventType eventType, Usuario usuario) {
         this();
         this.eventName = eventName;
         this.description = description;
         this.eventDate = eventDate;
         this.location = location;
         this.eventType = eventType;
-        this.organizer = organizer;
+        this.usuario = usuario;
     }
     
     // Getters and Setters
@@ -96,8 +94,8 @@ public class Event {
     public EventStatus getStatus() { return status; }
     public void setStatus(EventStatus status) { this.status = status; }
     
-    public Usuario getOrganizer() { return organizer; }
-    public void setOrganizer(Usuario organizer) { this.organizer = organizer; }
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
     
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

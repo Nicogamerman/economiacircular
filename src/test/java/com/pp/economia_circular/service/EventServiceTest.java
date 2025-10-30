@@ -62,7 +62,7 @@ class EventServiceTest {
         testEvent.setLongitude(-74.0060);
         testEvent.setEventType(Event.EventType.WORKSHOP);
         testEvent.setStatus(Event.EventStatus.ACTIVE);
-        testEvent.setOrganizer(adminUser);
+        testEvent.setUsuario(adminUser);
         testEvent.setCreatedAt(LocalDateTime.now());
         testEvent.setUpdatedAt(LocalDateTime.now());
 
