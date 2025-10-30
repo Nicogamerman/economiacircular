@@ -35,6 +35,10 @@ public class RegistroController {
         if (request.getContrasena() == null || request.getContrasena().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Contraseña es requerida");
         }
+
+        if (request.getRol() == null){
+            request.setRol("USER");
+        }
         
         byte[] fotoBytes = null;
         if (request.getFotoBase64() != null && !request.getFotoBase64().isEmpty()) {

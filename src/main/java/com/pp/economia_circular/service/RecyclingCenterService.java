@@ -47,9 +47,7 @@ public class RecyclingCenterService {
     
     public List<RecyclingCenterDto> getCentersNearLocation(Double latitude, Double longitude, Double radiusKm) {
         // Implementación simplificada - en producción usarías una consulta espacial
-        return recyclingCenterRepository.findAll().stream()
-                .filter(center -> calculateDistance(latitude, longitude, 
-                        center.getLatitude(), center.getLongitude()) <= radiusKm)
+        return recyclingCenterRepository.findNearbyCenters(latitude,longitude,radiusKm).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

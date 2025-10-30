@@ -144,12 +144,12 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Usuario inactivo");
             }
-
-            // Encriptar la nueva contraseña
-            String hashedPassword = passwordEncoder.encode(newPassword);
-            if (hashedPassword.equals(usuarioOpt.get().getContrasena())){
+            if (passwordEncoder.matches(newPassword, usuarioOpt.get().getContrasena())){
                 return ResponseEntity.badRequest().body("La contraseña debe ser diferente a la anterior.");
             }
+            // Encriptar la nueva contraseña
+            String hashedPassword = passwordEncoder.encode(newPassword);
+
             usuario.setContrasena(hashedPassword);
             usuario.setActualizadoEn(java.time.LocalDateTime.now());
             usuarioRepo.save(usuario);

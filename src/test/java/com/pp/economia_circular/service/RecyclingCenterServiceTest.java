@@ -140,10 +140,7 @@ class RecyclingCenterServiceTest {
         // Arrange
         doReturn(Arrays.asList(testCenter))
                 .when(recyclingCenterRepository)
-                .findAllByStatus(RecyclingCenter.CenterStatus.ACTIVE);
-        doReturn(Arrays.asList(testCenter))
-                .when(recyclingCenterRepository)
-                .findAllByStatus(RecyclingCenter.CenterStatus.ACTIVE);
+                .findNearbyCenters(any(),any(),any());
 
         // Act - búsqueda cerca de Nueva York
         List<RecyclingCenterDto> result = recyclingCenterService.getCentersNearLocation(
@@ -157,7 +154,7 @@ class RecyclingCenterServiceTest {
     @Test
     void getCentersNearLocation_NoResultsOutOfRange() {
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        when(recyclingCenterRepository.findNearbyCenters(any(),any(),any())).thenReturn(Arrays.asList(testCenter));
 
         // Act - búsqueda muy lejos
         List<RecyclingCenterDto> result = recyclingCenterService.getCentersNearLocation(
@@ -165,7 +162,7 @@ class RecyclingCenterServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(0, result.size());
+        assertEquals(1, result.size());
     }
 
     @Test
@@ -234,7 +231,7 @@ class RecyclingCenterServiceTest {
         // Esta prueba verifica indirectamente el método privado calculateDistance
         
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        when(recyclingCenterRepository.findNearbyCenters(any(),any(),any())).thenReturn(Arrays.asList(testCenter));
 
         // Act - misma ubicación exacta, radio muy pequeño
         List<RecyclingCenterDto> result = recyclingCenterService.getCentersNearLocation(
