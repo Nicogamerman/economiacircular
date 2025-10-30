@@ -68,8 +68,9 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
-    public Event getEvent(Long id) {
-        return eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+    public EventResponseDto getEvent(Long id) {
+        Event event = eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Evento no encontrado"));
+        return convertToResponseDto(event);
     }
 
     public List<EventResponseDto> getEventsNearLocation(Double latitude, Double longitude, Double radiusKm) {

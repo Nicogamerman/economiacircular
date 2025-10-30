@@ -92,7 +92,7 @@ public class EventController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getEvent(@PathVariable Long id) {
         try {
-            Event event = eventService.getEvent(id);
+            EventResponseDto event = eventService.getEvent(id);
             return ResponseEntity.ok(event);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

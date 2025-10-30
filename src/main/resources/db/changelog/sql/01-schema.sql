@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS imagenes_articulos (
 CREATE TABLE IF NOT EXISTS events (
   id BIGINT NOT NULL AUTO_INCREMENT,
   event_name VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
+  description VARCHAR(1000) NOT NULL,
   event_date DATETIME NOT NULL,
   location VARCHAR(255) NOT NULL,
   latitude DOUBLE,
