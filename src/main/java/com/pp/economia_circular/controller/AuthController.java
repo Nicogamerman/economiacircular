@@ -116,6 +116,9 @@ public class AuthController {
             String email = request.get("email");
             String newPassword = request.get("newPassword");
 
+            String oldPassword = request.get("oldPassword");
+
+
             // Validaciones
             if (email == null || email.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("Email es requerido");
@@ -146,6 +149,10 @@ public class AuthController {
             }
             if (passwordEncoder.matches(newPassword, usuarioOpt.get().getContrasena())){
                 return ResponseEntity.badRequest().body("La contraseña debe ser diferente a la anterior.");
+            }
+
+            if (!passwordEncoder.matches(oldPassword, usuarioOpt.get().getContrasena())){
+               return ResponseEntity.badRequest().body("La contraseña actual no coincide.");
             }
             // Encriptar la nueva contraseña
             String hashedPassword = passwordEncoder.encode(newPassword);
