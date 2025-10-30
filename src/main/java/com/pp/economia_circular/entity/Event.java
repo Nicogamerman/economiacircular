@@ -1,6 +1,8 @@
 package com.pp.economia_circular.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -40,7 +42,7 @@ public class Event {
     
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organizer_id")
+    @JoinColumn(name = "usuario_id")
     private Usuario organizer;
     
     @Column(name = "created_at")

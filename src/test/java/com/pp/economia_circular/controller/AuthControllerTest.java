@@ -606,8 +606,20 @@ class AuthControllerTest {
     void testResetPasswordEncriptaCorrectamente() throws Exception {
         // Arrange
         String newPassword = "NewPassword123!";
-        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
+        String oldPassword = "passwordVieja";
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\",\"oldPassword\":\"%s\"}", TEST_EMAIL, newPassword, oldPassword);
 
+        // Usuario activo con contraseña encriptada
+        usuarioActivo = new Usuario();
+        usuarioActivo.setId(1L);
+        usuarioActivo.setNombre("Test");
+        usuarioActivo.setApellido("User");
+        usuarioActivo.setEmail(TEST_EMAIL);
+        usuarioActivo.setContrasena(passwordEncoder.encode(oldPassword));
+        usuarioActivo.setRol("USER");
+        usuarioActivo.setActivo(true);
+        usuarioActivo.setCreadoEn(LocalDateTime.now());
+        usuarioActivo.setActualizadoEn(LocalDateTime.now());
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
         when(usuarioRepository.save(any())).thenAnswer(invocation -> {
             Usuario usuario = invocation.getArgument(0);
