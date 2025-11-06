@@ -89,7 +89,7 @@ public class Articulo {
     }
     @Getter
     public enum CondicionArticulo {
-        NUEVO, COMO_NUEVO, BUENO, REGULAR, MALO
+        NUEVO, USADO, REACONDICIONADO, AVERIADO
     }
     @Getter
     public enum EstadoArticulo {

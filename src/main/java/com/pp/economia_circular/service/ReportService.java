@@ -110,33 +110,39 @@ public class ReportService {
         report.setData(data);
         return report;
     }
-    
+
     public ReportDto generateTopArticlesReport() {
         ReportDto report = new ReportDto();
         report.setTitle("Reporte de Artículos Más Populares");
         report.setGeneratedAt(LocalDateTime.now());
-        
+
         Map<String, Object> data = new HashMap<>();
-        
-        // Artículos más consultados (simulado con artículos más recientes)
-        List<Articulo> recentArticles = articleRepository.findAvailableArticles();
+
+        // Traer todos los artículos, incluso los de usuarios inactivos
+        List<Articulo> allArticles = articleRepository.findAll();
+
+        // Ordenarlos por fecha descendente (simulando popularidad)
+        allArticles.sort((a, b) -> b.getCreadoEn().compareTo(a.getCreadoEn()));
+
         Map<String, Object> popularArticles = new HashMap<>();
-        
-        for (int i = 0; i < Math.min(10, recentArticles.size()); i++) {
-            Articulo article = recentArticles.get(i);
+
+        for (int i = 0; i < Math.min(10, allArticles.size()); i++) {
+            Articulo article = allArticles.get(i);
             Map<String, Object> articleInfo = new HashMap<>();
             articleInfo.put("title", article.getTitulo());
             articleInfo.put("category", article.getCategoria());
             articleInfo.put("user", article.getUsuario().getEmail());
+            articleInfo.put("userActivo", article.getUsuario().isActivo());
             articleInfo.put("createdAt", article.getCreadoEn());
             popularArticles.put("article_" + (i + 1), articleInfo);
+            articleInfo.put("condition", article.getCondicion());
         }
-        
+
         data.put("popularArticles", popularArticles);
         report.setData(data);
         return report;
     }
-    
+
     public ReportDto generateCommunicationReport() {
         ReportDto report = new ReportDto();
         report.setTitle("Reporte de Comunicación");

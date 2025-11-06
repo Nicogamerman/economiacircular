@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -30,11 +31,22 @@ public class JWTFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-
         HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
+
+        String path = req.getRequestURI();
         String authHeader = req.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        // 🔒 Evitar parsear JWT en rutas públicas o sin header
+        if (path.startsWith("/api/auth") || path.startsWith("/swagger") ||
+                path.startsWith("/v3/api-docs") || path.startsWith("/ping") ||
+                authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+            chain.doFilter(request, response);
+            return;
+        }
+
+        try {
             String token = authHeader.substring(7);
             String email = jwtService.extraerEmail(token);
 
@@ -42,12 +54,10 @@ public class JWTFilter implements Filter {
                 Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
 
                 if (usuario != null && usuario.isActivo()) {
-                    // Crear las autoridades (roles) del usuario
                     List<SimpleGrantedAuthority> authorities = Collections.singletonList(
                             new SimpleGrantedAuthority("ROLE_" + usuario.getRol())
                     );
 
-                    // Creamos un UserDetails con email y rol
                     User userDetails = new User(usuario.getEmail(), usuario.getContrasena(), authorities);
 
                     UsernamePasswordAuthenticationToken authToken =
@@ -57,7 +67,8 @@ public class JWTFilter implements Filter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-
+        } catch (Exception e) {
+            System.err.println("❌ Error al validar token: " + e.getMessage());
         }
 
         chain.doFilter(request, response);

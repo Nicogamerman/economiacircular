@@ -20,7 +20,7 @@ public class UsuarioController {
     // GET: listar todos los usuarios
     @GetMapping
     public List<Usuario> listarUsuarios() {
-        return usuarioRepository.findAll();
+        return usuarioRepository.findAll(); // <- esto ya trae todos si el repository no filtra por "activo"
     }
 
     // GET: usuario por id
