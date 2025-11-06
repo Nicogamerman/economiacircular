@@ -34,7 +34,7 @@ public class RecyclingCenterService {
     }
     
     public List<RecyclingCenterDto> getAllCenters() {
-        return recyclingCenterRepository.findAll().stream()
+        return recyclingCenterRepository.findAllByStatus(RecyclingCenter.CenterStatus.ACTIVE).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -47,9 +47,7 @@ public class RecyclingCenterService {
     
     public List<RecyclingCenterDto> getCentersNearLocation(Double latitude, Double longitude, Double radiusKm) {
         // Implementación simplificada - en producción usarías una consulta espacial
-        return recyclingCenterRepository.findAll().stream()
-                .filter(center -> calculateDistance(latitude, longitude, 
-                        center.getLatitude(), center.getLongitude()) <= radiusKm)
+        return recyclingCenterRepository.findNearbyCenters(latitude,longitude,radiusKm).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
@@ -79,7 +77,12 @@ public class RecyclingCenterService {
         center.setStatus(RecyclingCenter.CenterStatus.INACTIVE);
         recyclingCenterRepository.save(center);
     }
-    
+
+    public RecyclingCenter getById(Long id){
+
+        return recyclingCenterRepository.findById(id).orElseThrow(() -> new RuntimeException("Centro no encontrado"));
+    }
+
     private RecyclingCenterDto convertToDto(RecyclingCenter center) {
         RecyclingCenterDto dto = new RecyclingCenterDto();
         dto.setId(center.getId());

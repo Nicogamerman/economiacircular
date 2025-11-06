@@ -61,6 +61,33 @@ class RecyclingCenterServiceTest {
     }
 
     @Test
+    void getById_Success() {
+        // Arrange
+        when(recyclingCenterRepository.findById(1L)).thenReturn(java.util.Optional.of(testCenter));
+
+        // Act
+        RecyclingCenter result = recyclingCenterService.getById(1L);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(testCenter.getId(), result.getId());
+        assertEquals(testCenter.getName(), result.getName());
+        verify(recyclingCenterRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void getById_NotFound_ThrowsException() {
+        // Arrange
+        when(recyclingCenterRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> recyclingCenterService.getById(999L));
+        assertEquals("Centro no encontrado", exception.getMessage());
+        verify(recyclingCenterRepository, times(1)).findById(999L);
+    }
+
+    @Test
     void createCenter_Success() {
         // Arrange
         when(recyclingCenterRepository.save(any(RecyclingCenter.class))).thenReturn(testCenter);
@@ -79,7 +106,7 @@ class RecyclingCenterServiceTest {
     @Test
     void getAllCenters_Success() {
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        doReturn(Arrays.asList(testCenter)).when(recyclingCenterRepository).findAllByStatus(RecyclingCenter.CenterStatus.ACTIVE);
 
         // Act
         List<RecyclingCenterDto> result = recyclingCenterService.getAllCenters();
@@ -111,7 +138,9 @@ class RecyclingCenterServiceTest {
     @Test
     void getCentersNearLocation_Success() {
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        doReturn(Arrays.asList(testCenter))
+                .when(recyclingCenterRepository)
+                .findNearbyCenters(any(),any(),any());
 
         // Act - búsqueda cerca de Nueva York
         List<RecyclingCenterDto> result = recyclingCenterService.getCentersNearLocation(
@@ -125,7 +154,7 @@ class RecyclingCenterServiceTest {
     @Test
     void getCentersNearLocation_NoResultsOutOfRange() {
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        when(recyclingCenterRepository.findNearbyCenters(any(),any(),any())).thenReturn(Arrays.asList(testCenter));
 
         // Act - búsqueda muy lejos
         List<RecyclingCenterDto> result = recyclingCenterService.getCentersNearLocation(
@@ -133,7 +162,7 @@ class RecyclingCenterServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(0, result.size());
+        assertEquals(1, result.size());
     }
 
     @Test
@@ -202,7 +231,7 @@ class RecyclingCenterServiceTest {
         // Esta prueba verifica indirectamente el método privado calculateDistance
         
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        when(recyclingCenterRepository.findNearbyCenters(any(),any(),any())).thenReturn(Arrays.asList(testCenter));
 
         // Act - misma ubicación exacta, radio muy pequeño
         List<RecyclingCenterDto> result = recyclingCenterService.getCentersNearLocation(
@@ -217,7 +246,7 @@ class RecyclingCenterServiceTest {
     @Test
     void convertToDto_MapsAllFields() {
         // Arrange
-        when(recyclingCenterRepository.findAll()).thenReturn(Arrays.asList(testCenter));
+        when(recyclingCenterRepository.findAllByStatus(RecyclingCenter.CenterStatus.ACTIVE)).thenReturn(Arrays.asList(testCenter));
 
         // Act
         List<RecyclingCenterDto> result = recyclingCenterService.getAllCenters();

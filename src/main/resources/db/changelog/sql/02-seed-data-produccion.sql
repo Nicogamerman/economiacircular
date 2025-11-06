@@ -127,7 +127,7 @@ INSERT INTO imagenes_articulos (url_imagen, nombre_archivo, descripcion, articul
 -- 4. EVENTOS
 -- =====================================================
 
-INSERT INTO events (event_name, description, event_date, location, latitude, longitude, event_type, status, organizer_id, created_at, updated_at) VALUES
+INSERT INTO events (event_name, description, event_date, location, latitude, longitude, event_type, status, usuario_id, created_at, updated_at) VALUES
 ('Feria de Intercambio Sustentable', 'Gran feria de intercambio de objetos y productos sustentables. Traé lo que no uses y llevate algo nuevo. Entrada libre y gratuita.', DATE_ADD(NOW(), INTERVAL 15 DAY), 'Plaza San Martín, Buenos Aires', -34.5959, -58.3745, 'FAIR', 'ACTIVE', 1, NOW(), NOW()),
 
 ('Taller de Reparación de Electrónicos', 'Aprende a reparar tus propios dispositivos electrónicos. Traé tus aparatos en desuso y te ayudamos a repararlos. Materiales incluidos.', DATE_ADD(NOW(), INTERVAL 7 DAY), 'Centro Cultural Konex, CABA', -34.6019, -58.4003, 'WORKSHOP', 'ACTIVE', 1, NOW(), NOW()),

@@ -288,5 +288,275 @@ class JWTServiceTest {
                 .hasSize(3)
                 .allMatch(part -> !part.isEmpty(), "Todas las partes del token deben tener contenido");
     }
+
+    // ==================== TESTS PARA TOKEN CON ROL ====================
+
+    @Test
+    @DisplayName("Generar token con email y rol")
+    void testGenerarTokenConRol() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+
+        // Assert
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
+        assertTrue(token.startsWith("eyJ"));
+        
+        String[] parts = token.split("\\.");
+        assertEquals(3, parts.length);
+    }
+
+    @Test
+    @DisplayName("Token generado con rol contiene el email correcto")
+    void testTokenConRolContieneEmail() {
+        // Arrange
+        String email = "user@test.com";
+        String rol = "USER";
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        String emailExtraido = jwtService.extraerEmail(token);
+
+        // Assert
+        assertEquals(email, emailExtraido);
+    }
+
+    @Test
+    @DisplayName("Token generado con rol contiene el rol correcto")
+    void testTokenConRolContieneRol() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        String rolExtraido = jwtService.extraerRol(token);
+
+        // Assert
+        assertEquals(rol, rolExtraido);
+    }
+
+    @Test
+    @DisplayName("Token generado con rol contiene la claim 'rol'")
+    void testTokenConRolContieneClaimRol() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        assertNotNull(claims.get("rol"));
+        assertEquals(rol, claims.get("rol"));
+    }
+
+    @Test
+    @DisplayName("Token generado con rol contiene la claim 'authorities' en formato ROLE_")
+    void testTokenConRolContieneAuthorities() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+        String expectedAuthority = "ROLE_" + rol;
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        assertNotNull(claims.get("authorities"));
+        assertEquals(expectedAuthority, claims.get("authorities"));
+    }
+
+    @Test
+    @DisplayName("Extraer rol de token válido retorna el rol correcto")
+    void testExtraerRolDeTokenValido() {
+        // Arrange
+        String email = "user@test.com";
+        String rol = "USER";
+        String token = jwtService.generarToken(email, rol);
+
+        // Act
+        String rolExtraido = jwtService.extraerRol(token);
+
+        // Assert
+        assertEquals(rol, rolExtraido);
+    }
+
+    @Test
+    @DisplayName("Extraer rol de token sin rol retorna null")
+    void testExtraerRolDeTokenSinRol() {
+        // Arrange - Token generado con el método antiguo (sin rol)
+        String token = jwtService.generarToken(TEST_EMAIL);
+
+        // Act
+        String rolExtraido = jwtService.extraerRol(token);
+
+        // Assert
+        assertNull(rolExtraido, "Token sin rol debe retornar null");
+    }
+
+    @Test
+    @DisplayName("Extraer claims de token contiene todas las claims")
+    void testExtraerClaimsCompleta() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+        String token = jwtService.generarToken(email, rol);
+
+        // Act
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        assertNotNull(claims);
+        assertEquals(email, claims.getSubject());
+        assertEquals(email, claims.get("email"));
+        assertEquals(rol, claims.get("rol"));
+        assertEquals("ROLE_" + rol, claims.get("authorities"));
+        assertNotNull(claims.getIssuedAt());
+        assertNotNull(claims.getExpiration());
+    }
+
+    @Test
+    @DisplayName("Token con diferentes roles contiene roles diferentes")
+    void testTokensConDiferentesRoles() {
+        // Arrange
+        String email = "test@test.com";
+
+        // Act
+        String tokenAdmin = jwtService.generarToken(email, "ADMIN");
+        String tokenUser = jwtService.generarToken(email, "USER");
+
+        // Assert
+        assertEquals("ADMIN", jwtService.extraerRol(tokenAdmin));
+        assertEquals("USER", jwtService.extraerRol(tokenUser));
+        assertNotEquals(tokenAdmin, tokenUser);
+    }
+
+    @Test
+    @DisplayName("Generar token con rol USER contiene ROLE_USER")
+    void testTokenUserContieneRoleUser() {
+        // Arrange
+        String email = "user@test.com";
+        String rol = "USER";
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        assertEquals("ROLE_USER", claims.get("authorities"));
+    }
+
+    @Test
+    @DisplayName("Generar token con rol ADMIN contiene ROLE_ADMIN")
+    void testTokenAdminContieneRoleAdmin() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        assertEquals("ROLE_ADMIN", claims.get("authorities"));
+    }
+
+    @Test
+    @DisplayName("Token con rol mantiene todas las claims estándar de JWT")
+    void testTokenConRolMantieneClaimsEstandar() {
+        // Arrange
+        String email = "admin@test.com";
+        String rol = "ADMIN";
+        String token = jwtService.generarToken(email, rol);
+
+        // Act
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        assertAll("Verificar claims estándar",
+            () -> assertNotNull(claims.getSubject(), "Subject debe existir"),
+            () -> assertNotNull(claims.getIssuedAt(), "IssuedAt debe existir"),
+            () -> assertNotNull(claims.getExpiration(), "Expiration debe existir"),
+            () -> assertNotNull(claims.get("rol"), "Rol debe existir"),
+            () -> assertEquals(email, claims.get("email"), "Email debe coincidir")
+        );
+    }
+
+    @Test
+    @DisplayName("Extraer claims lanza excepción con token inválido")
+    void testExtraerClaimsTokenInvalido() {
+        // Arrange
+        String tokenInvalido = "token.invalido.aqui";
+
+        // Act & Assert
+        assertThrows(Exception.class, () -> {
+            jwtService.extraerClaims(tokenInvalido);
+        });
+    }
+
+    @Test
+    @DisplayName("Extraer rol lanza excepción con token inválido")
+    void testExtraerRolTokenInvalido() {
+        // Arrange
+        String tokenInvalido = "token.invalido.aqui";
+
+        // Act & Assert
+        assertThrows(Exception.class, () -> {
+            jwtService.extraerRol(tokenInvalido);
+        });
+    }
+
+    @Test
+    @DisplayName("Dos tokens generados para el mismo email y rol contienen la misma información")
+    void testDosTokensConMismoRolSonDiferentes() {
+        // Arrange
+        String email = "test@test.com";
+        String rol = "USER";
+
+        // Act
+        String token1 = jwtService.generarToken(email, rol);
+        String token2 = jwtService.generarToken(email, rol);
+
+        // Assert - Los tokens deben contener la misma información pero son diferentes por el timestamp
+        assertEquals(jwtService.extraerRol(token1), jwtService.extraerRol(token2));
+        assertEquals(jwtService.extraerEmail(token1), jwtService.extraerEmail(token2));
+        // Nota: Los tokens completos pueden ser iguales si se generan muy rápido, eso es normal
+    }
+
+    @Test
+    @DisplayName("Token con rol tiene expiración de 24 horas")
+    void testTokenConRolTieneExpiracion24Horas() {
+        // Arrange
+        String email = "user@test.com";
+        String rol = "USER";
+        long expectedExpirationMs = 86400000; // 24 horas en millisegundos
+
+        // Act
+        String token = jwtService.generarToken(email, rol);
+        Claims claims = jwtService.extraerClaims(token);
+
+        // Assert
+        long actualDuration = claims.getExpiration().getTime() - claims.getIssuedAt().getTime();
+        // Permitir una diferencia de ±5 segundos por redondeo
+        assertTrue(Math.abs(actualDuration - expectedExpirationMs) < 5000,
+                "La expiración debe ser aproximadamente 24 horas");
+    }
+
+    @Test
+    @DisplayName("Generar token con rol válido no lanza excepciones")
+    void testGenerarTokenConRolNoLanzaExcepciones() {
+        // Act & Assert
+        assertDoesNotThrow(() -> {
+            String token = jwtService.generarToken(TEST_EMAIL, "ADMIN");
+            assertNotNull(token);
+        });
+    }
 }
 

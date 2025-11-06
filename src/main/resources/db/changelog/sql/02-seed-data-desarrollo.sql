@@ -41,7 +41,7 @@ INSERT INTO imagenes_articulos (url_imagen, nombre_archivo, descripcion, articul
 -- EVENTOS
 -- =====================================================
 
-INSERT INTO events (event_name, description, event_date, location, latitude, longitude, event_type, status, organizer_id, created_at, updated_at) VALUES
+INSERT INTO events (event_name, description, event_date, location, latitude, longitude, event_type, status, usuario_id, created_at, updated_at) VALUES
 ('Feria de Prueba', 'Evento de testing', DATE_ADD(NOW(), INTERVAL 7 DAY), 'Plaza Test', -34.6037, -58.3816, 'FAIR', 'ACTIVE', 1, NOW(), NOW()),
 ('Taller Test', 'Taller de prueba', DATE_ADD(NOW(), INTERVAL 14 DAY), 'Centro Test', -34.6037, -58.3816, 'WORKSHOP', 'ACTIVE', 1, NOW(), NOW());
 

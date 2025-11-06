@@ -126,7 +126,7 @@ class AuthControllerTest {
                 .build();
 
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
-        when(jwtService.generarToken(TEST_EMAIL)).thenReturn(TEST_TOKEN);
+        when(jwtService.generarToken(TEST_EMAIL, usuarioActivo.getRol())).thenReturn(TEST_TOKEN);
 
         // Act & Assert
         mockMvc.perform(post(LOGIN_ENDPOINT)
@@ -140,7 +140,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, times(1)).findByEmail(TEST_EMAIL);
-        verify(jwtService, times(1)).generarToken(TEST_EMAIL);
+        verify(jwtService, times(1)).generarToken(TEST_EMAIL, usuarioActivo.getRol());
     }
 
     @Test
@@ -237,7 +237,7 @@ class AuthControllerTest {
                 .build();
 
         when(usuarioRepository.findByEmail("legacy@test.com")).thenReturn(Optional.of(usuarioLegacy));
-        when(jwtService.generarToken("legacy@test.com")).thenReturn(TEST_TOKEN);
+        when(jwtService.generarToken("legacy@test.com", usuarioLegacy.getRol())).thenReturn(TEST_TOKEN);
 
         // Act & Assert
         mockMvc.perform(post(LOGIN_ENDPOINT)
@@ -249,7 +249,7 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, times(1)).findByEmail("legacy@test.com");
-        verify(jwtService, times(1)).generarToken("legacy@test.com");
+        verify(jwtService, times(1)).generarToken("legacy@test.com", usuarioLegacy.getRol());
     }
 
     @Test
@@ -346,7 +346,7 @@ class AuthControllerTest {
                 .build();
 
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
-        when(jwtService.generarToken(TEST_EMAIL)).thenReturn(TEST_TOKEN);
+        when(jwtService.generarToken(TEST_EMAIL, usuarioActivo.getRol())).thenReturn(TEST_TOKEN);
 
         // Act & Assert
         mockMvc.perform(post(LOGIN_ENDPOINT)
@@ -382,7 +382,7 @@ class AuthControllerTest {
                 .build();
 
         when(usuarioRepository.findByEmail(emailMayusculas)).thenReturn(Optional.of(usuarioMayusculas));
-        when(jwtService.generarToken(emailMayusculas)).thenReturn(TEST_TOKEN);
+        when(jwtService.generarToken(emailMayusculas, usuarioMayusculas.getRol())).thenReturn(TEST_TOKEN);
 
         // Act & Assert
         mockMvc.perform(post(LOGIN_ENDPOINT)
@@ -403,7 +403,7 @@ class AuthControllerTest {
                 .build();
 
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
-        when(jwtService.generarToken(TEST_EMAIL)).thenReturn(TEST_TOKEN);
+        when(jwtService.generarToken(TEST_EMAIL, usuarioActivo.getRol())).thenReturn(TEST_TOKEN);
 
         // Act & Assert
         mockMvc.perform(post(LOGIN_ENDPOINT)
@@ -450,7 +450,20 @@ class AuthControllerTest {
     void testResetPasswordExitoso() throws Exception {
         // Arrange
         String newPassword = "NewPassword123!";
-        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
+        String oldPassword = "passwordVieja";
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\",\"oldPassword\":\"%s\"}", TEST_EMAIL, newPassword, oldPassword);
+
+        // Usuario activo con contraseña encriptada
+        usuarioActivo = new Usuario();
+        usuarioActivo.setId(1L);
+        usuarioActivo.setNombre("Test");
+        usuarioActivo.setApellido("User");
+        usuarioActivo.setEmail(TEST_EMAIL);
+        usuarioActivo.setContrasena(passwordEncoder.encode(oldPassword));
+        usuarioActivo.setRol("USER");
+        usuarioActivo.setActivo(true);
+        usuarioActivo.setCreadoEn(LocalDateTime.now());
+        usuarioActivo.setActualizadoEn(LocalDateTime.now());
 
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
         when(usuarioRepository.save(any())).thenReturn(usuarioActivo);
@@ -487,6 +500,7 @@ class AuthControllerTest {
 
         // Verify - No debe guardar nada
         verify(usuarioRepository, times(1)).findByEmail(emailInexistente);
+
         verify(usuarioRepository, never()).save(any());
     }
 
@@ -592,8 +606,20 @@ class AuthControllerTest {
     void testResetPasswordEncriptaCorrectamente() throws Exception {
         // Arrange
         String newPassword = "NewPassword123!";
-        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\"}", TEST_EMAIL, newPassword);
+        String oldPassword = "passwordVieja";
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"%s\",\"oldPassword\":\"%s\"}", TEST_EMAIL, newPassword, oldPassword);
 
+        // Usuario activo con contraseña encriptada
+        usuarioActivo = new Usuario();
+        usuarioActivo.setId(1L);
+        usuarioActivo.setNombre("Test");
+        usuarioActivo.setApellido("User");
+        usuarioActivo.setEmail(TEST_EMAIL);
+        usuarioActivo.setContrasena(passwordEncoder.encode(oldPassword));
+        usuarioActivo.setRol("USER");
+        usuarioActivo.setActivo(true);
+        usuarioActivo.setCreadoEn(LocalDateTime.now());
+        usuarioActivo.setActualizadoEn(LocalDateTime.now());
         when(usuarioRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(usuarioActivo));
         when(usuarioRepository.save(any())).thenAnswer(invocation -> {
             Usuario usuario = invocation.getArgument(0);
@@ -729,6 +755,150 @@ class AuthControllerTest {
 
         // Verify
         verify(usuarioRepository, never()).findByEmail(anyString());
+    }
+
+    // ==================== TESTS PARA DECODE TOKEN ====================
+
+    @Test
+    @DisplayName("Decodificar token válido retorna información correcta")
+    void testDecodeTokenValido() throws Exception {
+        // Arrange
+        String token = "valid.test.token";
+        String requestBody = String.format("{\"token\":\"%s\"}", token);
+
+        when(jwtService.validarToken(token)).thenReturn(true);
+        when(jwtService.extraerEmail(token)).thenReturn(TEST_EMAIL);
+        when(jwtService.extraerRol(token)).thenReturn("ADMIN");
+        when(jwtService.extraerClaims(token)).thenReturn(mock(io.jsonwebtoken.Claims.class));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(TEST_EMAIL))
+                .andExpect(jsonPath("$.rol").value("ADMIN"))
+                .andExpect(jsonPath("$.valid").value(true));
+    }
+
+    @Test
+    @DisplayName("Decodificar token con rol USER retorna rol correcto")
+    void testDecodeTokenConRolUser() throws Exception {
+        // Arrange
+        String token = "valid.test.token";
+        String requestBody = String.format("{\"token\":\"%s\"}", token);
+
+        when(jwtService.validarToken(token)).thenReturn(true);
+        when(jwtService.extraerEmail(token)).thenReturn(TEST_EMAIL);
+        when(jwtService.extraerRol(token)).thenReturn("USER");
+
+        io.jsonwebtoken.Claims claimsMock = mock(io.jsonwebtoken.Claims.class);
+        when(jwtService.extraerClaims(token)).thenReturn(claimsMock);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(TEST_EMAIL))
+                .andExpect(jsonPath("$.rol").value("USER"))
+                .andExpect(jsonPath("$.valid").value(true));
+    }
+
+    @Test
+    @DisplayName("Decodificar token inválido retorna error")
+    void testDecodeTokenInvalido() throws Exception {
+        // Arrange
+        String tokenInvalido = "token.invalido.aqui";
+        String requestBody = String.format("{\"token\":\"%s\"}", tokenInvalido);
+
+        when(jwtService.validarToken(tokenInvalido)).thenReturn(false);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Token inválido o expirado"));
+    }
+
+    @Test
+    @DisplayName("Decodificar token sin token debe fallar")
+    void testDecodeTokenSinToken() throws Exception {
+        // Arrange
+        String requestBody = "{}";
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Token es requerido"));
+    }
+
+    @Test
+    @DisplayName("Decodificar token con token vacío debe fallar")
+    void testDecodeTokenVacio() throws Exception {
+        // Arrange
+        String requestBody = "{\"token\":\"\"}";
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Token es requerido"));
+    }
+
+    @Test
+    @DisplayName("Decodificar token contiene todas las claims")
+    void testDecodeTokenContieneClaims() throws Exception {
+        // Arrange
+        String token = "valid.test.token";
+        String requestBody = String.format("{\"token\":\"%s\"}", token);
+
+        when(jwtService.validarToken(token)).thenReturn(true);
+        when(jwtService.extraerEmail(token)).thenReturn(TEST_EMAIL);
+        when(jwtService.extraerRol(token)).thenReturn("ADMIN");
+        when(jwtService.extraerClaims(token)).thenReturn(mock(io.jsonwebtoken.Claims.class));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").exists())
+                .andExpect(jsonPath("$.rol").exists())
+                .andExpect(jsonPath("$.claims").exists())
+                .andExpect(jsonPath("$.valid").exists());
+    }
+
+    @Test
+    @DisplayName("Decodificar token retorna claims completas")
+    void testDecodeTokenRetornaClaimsCompletas() throws Exception {
+        // Arrange
+        String token = "valid.test.token";
+        String requestBody = String.format("{\"token\":\"%s\"}", token);
+
+        io.jsonwebtoken.Claims claimsMock = mock(io.jsonwebtoken.Claims.class);
+        when(jwtService.validarToken(token)).thenReturn(true);
+        when(jwtService.extraerEmail(token)).thenReturn(TEST_EMAIL);
+        when(jwtService.extraerRol(token)).thenReturn("ADMIN");
+        when(jwtService.extraerClaims(token)).thenReturn(claimsMock);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/decode-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.claims").exists());
     }
 }
 

@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RecyclingCenterRepository extends JpaRepository<RecyclingCenter, Long> {
@@ -17,7 +18,9 @@ public interface RecyclingCenterRepository extends JpaRepository<RecyclingCenter
     
     List<RecyclingCenter> findByCenterTypeAndStatus(RecyclingCenter.CenterType centerType, 
                                                     RecyclingCenter.CenterStatus status);
-    
+
+    List<RecyclingCenter> findAllByStatus(RecyclingCenter.CenterStatus status);
+
     @Query("SELECT rc FROM RecyclingCenter rc WHERE " +
            "(:latitude IS NULL OR :longitude IS NULL OR " +
            "6371 * acos(cos(radians(:latitude)) * cos(radians(rc.latitude)) * " +
