@@ -118,40 +118,24 @@ public class ReportService {
 
         Map<String, Object> data = new HashMap<>();
 
-        // Traer todos los artículos
+        // Traer todos los artículos, incluso los de usuarios inactivos
         List<Articulo> allArticles = articleRepository.findAll();
 
-        // Ordenar por fecha, evitando NULLs
-        allArticles.sort((a, b) -> {
-            LocalDateTime fechaA = (a.getCreadoEn() != null) ? a.getCreadoEn() : LocalDateTime.MIN;
-            LocalDateTime fechaB = (b.getCreadoEn() != null) ? b.getCreadoEn() : LocalDateTime.MIN;
-            return fechaB.compareTo(fechaA);
-        });
+        // Ordenarlos por fecha descendente (simulando popularidad)
+        allArticles.sort((a, b) -> b.getCreadoEn().compareTo(a.getCreadoEn()));
 
         Map<String, Object> popularArticles = new HashMap<>();
 
         for (int i = 0; i < Math.min(10, allArticles.size()); i++) {
             Articulo article = allArticles.get(i);
             Map<String, Object> articleInfo = new HashMap<>();
-
             articleInfo.put("title", article.getTitulo());
-            articleInfo.put("category",
-                    article.getCategoria() != null ? article.getCategoria().toString() : "SIN_CATEGORIA");
-            articleInfo.put("condition",
-                    article.getCondicion() != null ? article.getCondicion().toString() : "SIN_CONDICION");
-
-            // Evita NPE si el usuario es null
-            if (article.getUsuario() != null) {
-                articleInfo.put("user", article.getUsuario().getEmail());
-                articleInfo.put("userActivo", article.getUsuario().isActivo());
-            } else {
-                articleInfo.put("user", "DESCONOCIDO");
-                articleInfo.put("userActivo", false);
-            }
-
+            articleInfo.put("category", article.getCategoria());
+            articleInfo.put("user", article.getUsuario().getEmail());
+            articleInfo.put("userActivo", article.getUsuario().isActivo());
             articleInfo.put("createdAt", article.getCreadoEn());
-
             popularArticles.put("article_" + (i + 1), articleInfo);
+            articleInfo.put("condition", article.getCondicion());
         }
 
         data.put("popularArticles", popularArticles);
