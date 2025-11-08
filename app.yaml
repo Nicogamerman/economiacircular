@@ -5,7 +5,7 @@ env_variables:
   SPRING_PROFILES_ACTIVE: prod
   SPRING_DATASOURCE_URL: jdbc:mysql://google/economia_circular?cloudSqlInstance=economia-circular-470222:us-central1:root&socketFactory=com.google.cloud.sql.mysql.SocketFactory
   SPRING_DATASOURCE_USERNAME: user
-  SPRING_DATASOURCE_PASSWORD: PirAta.22
+  SPRING_DATASOURCE_PASSWORD: devpass
 
 beta_settings:
   cloud_sql_instances: economia-circular-470222:us-central1:root
