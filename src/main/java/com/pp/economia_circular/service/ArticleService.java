@@ -89,6 +89,8 @@ public class ArticleService {
         ).map(this::convertToResponseDto);
     }
 
+    @Autowired
+    private ReportService reportService;
     // ✅ CORRECTO: actualización con validación de propietario
     public ArticleResponseDto updateArticle(Long id, ArticleCreateDto updateDto) {
         Usuario currentUser = authService.getCurrentUser();
@@ -96,24 +98,32 @@ public class ArticleService {
             throw new RuntimeException("Usuario no autenticado");
         }
 
-        Articulo article = articleRepository.findById(id)
+        Articulo articulo = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
 
-        // Verificar que el usuario sea el propietario
-        if (!article.getUsuario().getId().equals(currentUser.getId())) {
+        if (!articulo.getUsuario().getId().equals(currentUser.getId())) {
             throw new RuntimeException("No tienes permisos para editar este artículo");
         }
 
-        article.setTitulo(updateDto.getTitle());
-        article.setDescripcion(updateDto.getDescription());
-        article.setCategoria(updateDto.getCategory());
-        article.setCondicion(updateDto.getCondition());
-        article.setEstado(updateDto.getEstado());
-        article.setActualizadoEn(LocalDateTime.now());
+        articulo.setTitulo(updateDto.getTitle());
+        articulo.setDescripcion(updateDto.getDescription());
+        articulo.setCategoria(updateDto.getCategory());
+        articulo.setCondicion(updateDto.getCondition());
+        articulo.setEstado(updateDto.getEstado());
+        articulo.setActualizadoEn(LocalDateTime.now());
 
-        Articulo updatedArticle = articleRepository.save(article);
-        return convertToResponseDto(updatedArticle);
+        Articulo updated = articleRepository.save(articulo);
+
+        Articulo.EstadoArticulo estado = articulo.getEstado();
+        if (estado == Articulo.EstadoArticulo.INTERCAMBIADO
+                || estado == Articulo.EstadoArticulo.DONADO
+                || estado == Articulo.EstadoArticulo.VENDIDO) {
+            reportService.recalcularImpactoAmbiental();
+        }
+
+        return convertToResponseDto(updated);
     }
+
 
     public void deleteArticle(Long id) {
         Usuario currentUser = authService.getCurrentUser();

@@ -5,6 +5,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "mensajes")
@@ -18,20 +19,22 @@ public class Mensaje {
     @Column(columnDefinition = "TEXT")
     private String contenido;
     
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "remitente_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Usuario remitente;
-    
-    @NotNull
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "destinatario_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Usuario destinatario;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "articulo_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Articulo articulo;
-    
+
+
     @Enumerated(EnumType.STRING)
     private EstadoMensaje estado = EstadoMensaje.NO_LEIDO;
     
