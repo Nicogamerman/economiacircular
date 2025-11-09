@@ -50,4 +50,7 @@ public interface ArticleRepository extends JpaRepository<Articulo, Long> {
            "ORDER BY COUNT(v.id) DESC",
            nativeQuery = true)
     List<Articulo> findMostViewedArticles(Pageable pageable);
+
+    List<Articulo> findByUsuarioEmail(String email);
+
 }

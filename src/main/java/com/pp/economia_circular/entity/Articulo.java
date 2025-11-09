@@ -85,7 +85,7 @@ public class Articulo {
     public enum CategoriaArticulo {
         ELECTRONICOS, ROPA, LIBROS, MUEBLES, HERRAMIENTAS, 
         DEPORTES, DECORACION_HOGAR, COCINA, JARDIN, AUTOMOTRIZ,
-        JUGUETES, SUMINISTROS_ARTE, INSTRUMENTOS_MUSICALES, OTROS
+        JUGUETES, SUMINISTROS_ARTE, INSTRUMENTOS_MUSICALES, OTROS,
     }
     @Getter
     public enum CondicionArticulo {

@@ -68,4 +68,26 @@ public class ReportController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/social")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> generateSocialReport() {
+        try {
+            ReportDto report = reportService.generateSocialReport();
+            return ResponseEntity.ok(report);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @GetMapping("/environmental")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> generateEnvironmentalReport() {
+        try {
+            ReportDto report = reportService.generateEnvironmentalReport();
+            return ResponseEntity.ok(report);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
 }

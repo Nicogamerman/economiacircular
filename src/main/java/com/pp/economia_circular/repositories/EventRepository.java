@@ -31,4 +31,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findNearbyEvents(@Param("latitude") Double latitude, 
                                  @Param("longitude") Double longitude, 
                                  @Param("radius") Double radius);
+
+    long countByStatus(Event.EventStatus status);
 }
+

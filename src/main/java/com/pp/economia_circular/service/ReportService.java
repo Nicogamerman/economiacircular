@@ -4,13 +4,16 @@ import com.pp.economia_circular.DTO.ReportDto;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.entity.Mensaje;
+import com.pp.economia_circular.entity.SolicitudIntercambio;
+import com.pp.economia_circular.entity.Event;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import com.pp.economia_circular.repositories.MensajeRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
+import com.pp.economia_circular.repositories.VistaArticuloRepository;
+import com.pp.economia_circular.repositories.SolicitudIntercambioRepository;
+import com.pp.economia_circular.repositories.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.pp.economia_circular.repositories.VistaArticuloRepository;
-
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -29,6 +32,15 @@ public class ReportService {
     @Autowired
     private MensajeRepository mensajeRepository;
 
+    @Autowired
+    private VistaArticuloRepository vistaArticuloRepository;
+
+    @Autowired
+    private SolicitudIntercambioRepository solicitudIntercambioRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
     public ReportDto generateUserReport() {
         ReportDto report = new ReportDto();
         report.setTitle("Reporte de Usuarios");
@@ -36,11 +48,9 @@ public class ReportService {
 
         Map<String, Object> data = new HashMap<>();
 
-        // Total de usuarios
         long totalUsers = usuarioRepository.count();
         data.put("totalUsers", totalUsers);
 
-        // Usuarios activos
         long activeUsers = usuarioRepository.findAll().stream()
                 .filter(Usuario::isActivo)
                 .count();
@@ -57,19 +67,15 @@ public class ReportService {
 
         Map<String, Object> data = new HashMap<>();
 
-        // Total de artículos
         long totalArticles = articleRepository.count();
         data.put("totalArticles", totalArticles);
 
-        // Artículos disponibles
         long availableArticles = articleRepository.findByEstado(Articulo.EstadoArticulo.DISPONIBLE).size();
         data.put("availableArticles", availableArticles);
 
-        // Artículos intercambiados
         long exchangedArticles = articleRepository.findByEstado(Articulo.EstadoArticulo.INTERCAMBIADO).size();
         data.put("exchangedArticles", exchangedArticles);
 
-        // Artículos por categoría
         Map<String, Long> articlesByCategory = new HashMap<>();
         for (Articulo.CategoriaArticulo category : Articulo.CategoriaArticulo.values()) {
             articlesByCategory.put(category.name(),
@@ -77,7 +83,6 @@ public class ReportService {
         }
         data.put("articlesByCategory", articlesByCategory);
 
-        // Artículos por condición
         Map<String, Long> articlesByCondition = new HashMap<>();
         for (Articulo.CondicionArticulo condition : Articulo.CondicionArticulo.values()) {
             articlesByCondition.put(condition.name(),
@@ -86,7 +91,7 @@ public class ReportService {
                             .count());
         }
         data.put("articlesByCondition", articlesByCondition);
-        // Top 5 artículos más vistos
+
         List<Object[]> topViewed = vistaArticuloRepository.findTopViewedArticles();
         Map<String, Object> topViewedArticles = new HashMap<>();
 
@@ -106,7 +111,6 @@ public class ReportService {
                 info.put("vistas", vistas);
                 topViewedArticles.put("articulo_" + (index + 1), info);
             });
-
         }
 
         data.put("topViewedArticles", topViewedArticles);
@@ -122,7 +126,6 @@ public class ReportService {
 
         Map<String, Object> data = new HashMap<>();
 
-        // Usuarios con más artículos
         List<Usuario> users = usuarioRepository.findAll();
         Map<String, Long> usersByArticleCount = new HashMap<>();
         for (Usuario user : users) {
@@ -144,15 +147,12 @@ public class ReportService {
 
         Map<String, Object> data = new HashMap<>();
 
-        // Traer todos los artículos, incluso los de usuarios inactivos
         List<Articulo> allArticles = articleRepository.findAll();
 
-        // Verificar si no hay artículos disponibles
         if (allArticles.isEmpty()) {
-            return null;  // Retornamos null si no hay artículos
+            return null;
         }
 
-        // Ordenarlos por fecha descendente (simulando popularidad)
         allArticles.sort((a, b) -> b.getCreadoEn().compareTo(a.getCreadoEn()));
 
         Map<String, Object> popularArticles = new HashMap<>();
@@ -161,7 +161,6 @@ public class ReportService {
             Articulo article = allArticles.get(i);
             Map<String, Object> articleInfo = new HashMap<>();
 
-            // Comprobamos si el artículo tiene un usuario asignado
             if (article.getUsuario() != null) {
                 articleInfo.put("title", article.getTitulo());
                 articleInfo.put("category", article.getCategoria());
@@ -177,15 +176,118 @@ public class ReportService {
             popularArticles.put("article_" + (i + 1), articleInfo);
         }
 
-        // Asignamos los artículos populares a los datos del reporte
         data.put("popularArticles", popularArticles);
         report.setData(data);
-
         return report;
     }
 
-    @Autowired
-    private VistaArticuloRepository  vistaArticuloRepository;
+    public ReportDto generateSocialReport() {
+        ReportDto report = new ReportDto();
+        report.setTitle("Reporte Social");
+        report.setGeneratedAt(LocalDateTime.now());
+
+        Map<String, Object> data = new HashMap<>();
+
+        // Usuarios
+        long totalUsuarios = usuarioRepository.count();
+        long usuariosActivos = usuarioRepository.findAll().stream().filter(Usuario::isActivo).count();
+        data.put("usuariosTotales", totalUsuarios);
+        data.put("usuariosActivos", usuariosActivos);
+
+        // Intercambios
+        long totalIntercambios = solicitudIntercambioRepository.count();
+        long intercambiosPendientes = solicitudIntercambioRepository.countByEstado(
+                SolicitudIntercambio.EstadoIntercambio.PENDIENTE);
+        long intercambiosCompletados = solicitudIntercambioRepository.countByEstado(
+                SolicitudIntercambio.EstadoIntercambio.COMPLETADO);
+        long intercambiosCancelados = solicitudIntercambioRepository.countByEstado(
+                SolicitudIntercambio.EstadoIntercambio.CANCELADO);
+
+        data.put("intercambiosTotales", totalIntercambios);
+        data.put("pendientes", intercambiosPendientes);
+        data.put("completados", intercambiosCompletados);
+        data.put("cancelados", intercambiosCancelados);
+
+        // Eventos
+        long totalEventos = eventRepository.count();
+        long eventosActivos = eventRepository.countByStatus(Event.EventStatus.ACTIVE);
+        long eventosFinalizados = eventRepository.countByStatus(Event.EventStatus.COMPLETED);
+
+        data.put("eventosTotales", totalEventos);
+        data.put("eventosActivos", eventosActivos);
+        data.put("eventosFinalizados", eventosFinalizados);
+
+        report.setData(data);
+        return report;
+    }
+    public ReportDto generateEnvironmentalReport() {
+        ReportDto report = new ReportDto();
+        report.setTitle("Reporte Ambiental");
+        report.setGeneratedAt(LocalDateTime.now());
+
+        Map<String, Object> data = new HashMap<>();
+
+        long totalArticulos = articleRepository.count();
+        List<Articulo> articulosReutilizados = articleRepository.findByEstado(Articulo.EstadoArticulo.INTERCAMBIADO);
+
+        double porcentajeReutilizacion = totalArticulos > 0
+                ? (articulosReutilizados.size() * 100.0 / totalArticulos)
+                : 0.0;
+
+        // Factores ambientales por categoría [CO2 kg, Energía kWh, Agua L, Peso promedio kg]
+        Map<String, double[]> factores = new HashMap<>();
+        factores.put("ELECTRONICA", new double[]{55.0, 200.0, 35.0, 0.4});
+        factores.put("ROPA", new double[]{1.0, 5.0, 50.0, 0.8});
+        factores.put("MUEBLE", new double[]{25.0, 100.0, 300.0, 25.0});
+        factores.put("GENERIC", new double[]{3.0, 20.0, 100.0, 1.5});
+
+        double co2Total = 0.0;
+        double energiaTotal = 0.0;
+        double aguaTotal = 0.0;
+        double residuosEvitados = 0.0;
+
+        Map<String, Map<String, Object>> impactoPorCategoria = new HashMap<>();
+
+        for (Articulo articulo : articulosReutilizados) {
+            String categoria = articulo.getCategoria() != null
+                    ? articulo.getCategoria().name()
+                    : "GENERIC";
+
+            double[] f = factores.getOrDefault(categoria, factores.get("GENERIC"));
+
+            co2Total += f[0];
+            energiaTotal += f[1];
+            aguaTotal += f[2];
+            residuosEvitados += f[3];
+
+            impactoPorCategoria.putIfAbsent(categoria, new HashMap<>());
+            Map<String, Object> impacto = impactoPorCategoria.get(categoria);
+
+            impacto.put("reutilizados", (long) impacto.getOrDefault("reutilizados", 0L) + 1);
+            impacto.put("co2Kg", (double) impacto.getOrDefault("co2Kg", 0.0) + f[0]);
+            impacto.put("residuosKg", (double) impacto.getOrDefault("residuosKg", 0.0) + f[3]);
+            impactoPorCategoria.put(categoria, impacto);
+        }
+
+        data.put("articulosTotales", totalArticulos);
+        data.put("articulosReutilizados", articulosReutilizados.size());
+        data.put("porcentajeReutilizacion", porcentajeReutilizacion);
+        data.put("co2EvitadoKg", co2Total);
+        data.put("energiaEvitadaKwh", energiaTotal);
+        data.put("aguaEvitadaL", aguaTotal);
+        data.put("residuosEvitadosKg", residuosEvitados);
+        data.put("impactoPorCategoria", impactoPorCategoria);
+
+        report.setData(data);
+        return report;
+    }
+    public void recalcularImpactoAmbiental() {
+        // Este método simplemente volverá a generar el reporte ambiental
+        // y actualizará los totales internos si los estás guardando en memoria o base
+    }
+
+
 
 
 }
+

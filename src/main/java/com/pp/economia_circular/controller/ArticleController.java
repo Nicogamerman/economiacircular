@@ -15,6 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.pp.economia_circular.DTO.ArticleUserDto;
+import com.pp.economia_circular.repositories.ArticleRepository;
+import java.util.stream.Collectors;
+
 import javax.validation.Valid;
 import java.util.List;
 
@@ -143,4 +147,43 @@ public class ArticleController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+
+    @Autowired
+    private ArticleRepository articleRepository;
+
+    @GetMapping("/articulos-usuario")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<?> getArticulosPorUsuario(@RequestParam String email) {
+        try {
+            List<Articulo> articulos = articleRepository.findByUsuarioEmail(email);
+
+            if (articulos == null || articulos.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                        .body("No se encontraron artículos para el usuario con email: " + email);
+            }
+
+            // Convertir las entidades a DTOs (compatible con Java 8)
+            List<ArticleUserDto> articulosDto = articulos.stream()
+                    .map(a -> new ArticleUserDto(
+                            a.getId(),
+                            a.getTitulo(),
+                            a.getCategoria(),
+                            a.getEstado(),
+                            a.getCondicion(),
+                            a.getDescripcion(),
+                            a.getUsuario() != null ? a.getUsuario().getEmail() : "Desconocido"
+                    ))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(articulosDto);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al obtener los artículos del usuario: " + e.getMessage());
+        }
+    }
+
+
+
 }
