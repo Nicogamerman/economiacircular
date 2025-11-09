@@ -93,6 +93,12 @@ public class Articulo {
     }
     @Getter
     public enum EstadoArticulo {
-        DISPONIBLE, INTERCAMBIADO, RESERVADO, ELIMINADO
+        DISPONIBLE,
+        INTERCAMBIADO,
+        RESERVADO,
+        DONADO,
+        CANCELADO,
+        VENDIDO,
+        PAUSADO
     }
 }
