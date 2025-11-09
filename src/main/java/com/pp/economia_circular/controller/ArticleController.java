@@ -148,7 +148,19 @@ public class ArticleController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // ✅ MÉTODO POST: Crear artículo
+    @PostMapping("")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> createArticle(@Valid @RequestBody ArticleCreateDto createDto) {
+        try {
+            ArticleResponseDto article = articleService.createArticle(createDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(article);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
+    // ✅ MÉTODO PUT: Actualizar artículo existente
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<?> updateArticle(@PathVariable Long id, @Valid @RequestBody ArticleCreateDto updateDto) {
@@ -159,6 +171,7 @@ public class ArticleController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
