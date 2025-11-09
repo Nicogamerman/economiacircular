@@ -20,6 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+
 @Service
 public class ReportService {
 
@@ -41,24 +48,171 @@ public class ReportService {
     @Autowired
     private EventRepository eventRepository;
 
-    public ReportDto generateUserReport() {
+    @Autowired
+    private JWTService jwtService;
+
+    public ReportDto generateEnvironmentalReport() {
         ReportDto report = new ReportDto();
-        report.setTitle("Reporte de Usuarios");
+        report.setTitle("Reporte Ambiental");
         report.setGeneratedAt(LocalDateTime.now());
 
-        Map<String, Object> data = new HashMap<>();
+        Map<String, Object> data = new LinkedHashMap<>();
 
-        long totalUsers = usuarioRepository.count();
-        data.put("totalUsers", totalUsers);
+        List<Articulo> articulos = articleRepository.findAll();
+        int totalArticulos = articulos.size();
 
-        long activeUsers = usuarioRepository.findAll().stream()
-                .filter(Usuario::isActivo)
-                .count();
-        data.put("activeUsers", activeUsers);
+        List<Articulo> reutilizados = new ArrayList<>();
+        for (Articulo a : articulos) {
+            if (a.getEstado() == Articulo.EstadoArticulo.INTERCAMBIADO
+                    || a.getEstado() == Articulo.EstadoArticulo.DONADO
+                    || a.getEstado() == Articulo.EstadoArticulo.VENDIDO) {
+                reutilizados.add(a);
+            }
+        }
+
+        int cantidadReutilizados = reutilizados.size();
+
+        double co2Total = 0.0;
+        double aguaTotal = 0.0;
+        double residuosTotal = 0.0;
+        double energiaTotal = 0.0;
+
+        Map<String, Map<String, Object>> impactoPorCategoria = new HashMap<>();
+        Map<String, Map<String, Object>> impactoPorTipo = new HashMap<>();
+        Map<String, Map<String, Object>> impactoPorMes = new HashMap<>();
+
+        for (Articulo art : reutilizados) {
+            double co2 = calcularCo2(art);
+            double agua = calcularAgua(art);
+            double residuos = calcularResiduos(art);
+            double energia = calcularEnergia(art);
+
+            co2Total += co2;
+            aguaTotal += agua;
+            residuosTotal += residuos;
+            energiaTotal += energia;
+
+            String categoria = art.getCategoria().name();
+            if (!impactoPorCategoria.containsKey(categoria)) {
+                Map<String, Object> inicial = new HashMap<>();
+                inicial.put("co2Kg", 0.0);
+                inicial.put("residuosKg", 0.0);
+                inicial.put("reutilizados", 0);
+                impactoPorCategoria.put(categoria, inicial);
+            }
+            Map<String, Object> impactoCat = impactoPorCategoria.get(categoria);
+            impactoCat.put("co2Kg", ((Double) impactoCat.get("co2Kg")) + co2);
+            impactoCat.put("residuosKg", ((Double) impactoCat.get("residuosKg")) + residuos);
+            impactoCat.put("reutilizados", ((Integer) impactoCat.get("reutilizados")) + 1);
+
+            String tipo = art.getEstado().name();
+            if (!impactoPorTipo.containsKey(tipo)) {
+                Map<String, Object> inicial = new HashMap<>();
+                inicial.put("cantidad", 0);
+                inicial.put("co2Kg", 0.0);
+                impactoPorTipo.put(tipo, inicial);
+            }
+            Map<String, Object> impactoTipo = impactoPorTipo.get(tipo);
+            impactoTipo.put("cantidad", ((Integer) impactoTipo.get("cantidad")) + 1);
+            impactoTipo.put("co2Kg", ((Double) impactoTipo.get("co2Kg")) + co2);
+
+            if (art.getActualizadoEn() != null) {
+                String mes = art.getActualizadoEn().toLocalDate().toString().substring(0, 7);
+                if (!impactoPorMes.containsKey(mes)) {
+                    Map<String, Object> inicial = new HashMap<>();
+                    inicial.put("reutilizados", 0);
+                    inicial.put("co2Kg", 0.0);
+                    impactoPorMes.put(mes, inicial);
+                }
+                Map<String, Object> impactoMes = impactoPorMes.get(mes);
+                impactoMes.put("reutilizados", ((Integer) impactoMes.get("reutilizados")) + 1);
+                impactoMes.put("co2Kg", ((Double) impactoMes.get("co2Kg")) + co2);
+            }
+        }
+
+        Map<String, Object> equivalentes = new HashMap<>();
+        equivalentes.put("autosSinUsarUnDia", (int) (co2Total / 120));
+        equivalentes.put("duchasAhorradas", (int) (aguaTotal / 80));
+
+        Map<String, Object> impactoUsuario = new HashMap<>();
+        Usuario usuario = jwtService.getCurrentUser();
+        if (usuario != null) {
+            List<Articulo> delUsuario = new ArrayList<>();
+            for (Articulo a : reutilizados) {
+                if (a.getUsuario() != null && a.getUsuario().getId().equals(usuario.getId())) {
+                    delUsuario.add(a);
+                }
+            }
+
+            double co2Usuario = 0.0;
+            for (Articulo a : delUsuario) {
+                co2Usuario += calcularCo2(a);
+            }
+
+            impactoUsuario.put("email", usuario.getEmail());
+            impactoUsuario.put("reutilizados", delUsuario.size());
+            impactoUsuario.put("co2EvitadoKg", co2Usuario);
+        }
+
+        double porcentajeReutilizacion = totalArticulos == 0 ? 0.0 :
+                (cantidadReutilizados * 100.0 / totalArticulos);
+
+        data.put("articulosTotales", totalArticulos);
+        data.put("articulosReutilizados", cantidadReutilizados);
+        data.put("porcentajeReutilizacion", porcentajeReutilizacion);
+        data.put("co2EvitadoKg", co2Total);
+        data.put("aguaEvitadaL", aguaTotal);
+        data.put("residuosEvitadosKg", residuosTotal);
+        data.put("energiaEvitadaKwh", energiaTotal);
+        data.put("impactoPorCategoria", impactoPorCategoria);
+        data.put("impactoPorTipo", impactoPorTipo);
+        data.put("impactoPorMes", impactoPorMes);
+        data.put("equivalentes", equivalentes);
+        if (!impactoUsuario.isEmpty()) {
+            data.put("usuario", impactoUsuario);
+        }
 
         report.setData(data);
         return report;
     }
+
+    // =======================
+// Métodos auxiliares
+// =======================
+    private double calcularCo2(Articulo art) {
+        switch (art.getCategoria()) {
+            case ELECTRONICOS: return 3.0;
+            case MUEBLES: return 1.5;
+            case ROPA: return 1.0;
+            default: return 0.5;
+        }
+    }
+
+    private double calcularAgua(Articulo art) {
+        switch (art.getCategoria()) {
+            case ROPA: return 200.0;
+            case MUEBLES: return 80.0;
+            default: return 40.0;
+        }
+    }
+
+    private double calcularResiduos(Articulo art) {
+        switch (art.getCategoria()) {
+            case ELECTRONICOS: return 1.5;
+            case MUEBLES: return 1.0;
+            case ROPA: return 0.8;
+            default: return 0.5;
+        }
+    }
+
+    private double calcularEnergia(Articulo art) {
+        switch (art.getCategoria()) {
+            case ELECTRONICOS: return 20.0;
+            case MUEBLES: return 10.0;
+            default: return 5.0;
+        }
+    }
+
 
     public ReportDto generateArticleReport() {
         ReportDto report = new ReportDto();
@@ -220,70 +374,52 @@ public class ReportService {
         report.setData(data);
         return report;
     }
-    public ReportDto generateEnvironmentalReport() {
+
+    public void recalcularImpactoAmbiental() {
+        // Este método simplemente volverá a generar el reporte ambiental
+        // y actualizará los totales internos si los estás guardando en memoria o base
+    }
+
+    public ReportDto generateUserReport() {
         ReportDto report = new ReportDto();
-        report.setTitle("Reporte Ambiental");
+        report.setTitle("Reporte de Usuarios");
         report.setGeneratedAt(LocalDateTime.now());
 
         Map<String, Object> data = new HashMap<>();
 
-        long totalArticulos = articleRepository.count();
-        List<Articulo> articulosReutilizados = articleRepository.findByEstado(Articulo.EstadoArticulo.INTERCAMBIADO);
+        long totalUsers = usuarioRepository.count();
+        data.put("totalUsuarios", totalUsers);
 
-        double porcentajeReutilizacion = totalArticulos > 0
-                ? (articulosReutilizados.size() * 100.0 / totalArticulos)
+        long activeUsers = usuarioRepository.findAll().stream()
+                .filter(Usuario::isActivo)
+                .count();
+        data.put("usuariosActivos", activeUsers);
+
+        // Porcentaje de usuarios activos
+        double porcentajeActivos = totalUsers > 0
+                ? (activeUsers * 100.0 / totalUsers)
                 : 0.0;
+        data.put("porcentajeActivos", porcentajeActivos);
 
-        // Factores ambientales por categoría [CO2 kg, Energía kWh, Agua L, Peso promedio kg]
-        Map<String, double[]> factores = new HashMap<>();
-        factores.put("ELECTRONICA", new double[]{55.0, 200.0, 35.0, 0.4});
-        factores.put("ROPA", new double[]{1.0, 5.0, 50.0, 0.8});
-        factores.put("MUEBLE", new double[]{25.0, 100.0, 300.0, 25.0});
-        factores.put("GENERIC", new double[]{3.0, 20.0, 100.0, 1.5});
-
-        double co2Total = 0.0;
-        double energiaTotal = 0.0;
-        double aguaTotal = 0.0;
-        double residuosEvitados = 0.0;
-
-        Map<String, Map<String, Object>> impactoPorCategoria = new HashMap<>();
-
-        for (Articulo articulo : articulosReutilizados) {
-            String categoria = articulo.getCategoria() != null
-                    ? articulo.getCategoria().name()
-                    : "GENERIC";
-
-            double[] f = factores.getOrDefault(categoria, factores.get("GENERIC"));
-
-            co2Total += f[0];
-            energiaTotal += f[1];
-            aguaTotal += f[2];
-            residuosEvitados += f[3];
-
-            impactoPorCategoria.putIfAbsent(categoria, new HashMap<>());
-            Map<String, Object> impacto = impactoPorCategoria.get(categoria);
-
-            impacto.put("reutilizados", (long) impacto.getOrDefault("reutilizados", 0L) + 1);
-            impacto.put("co2Kg", (double) impacto.getOrDefault("co2Kg", 0.0) + f[0]);
-            impacto.put("residuosKg", (double) impacto.getOrDefault("residuosKg", 0.0) + f[3]);
-            impactoPorCategoria.put(categoria, impacto);
+        // Últimos 5 usuarios registrados
+        List<Usuario> ultimos = usuarioRepository.findAll();
+        if (ultimos.size() > 5) {
+            ultimos = ultimos.subList(ultimos.size() - 5, ultimos.size());
         }
 
-        data.put("articulosTotales", totalArticulos);
-        data.put("articulosReutilizados", articulosReutilizados.size());
-        data.put("porcentajeReutilizacion", porcentajeReutilizacion);
-        data.put("co2EvitadoKg", co2Total);
-        data.put("energiaEvitadaKwh", energiaTotal);
-        data.put("aguaEvitadaL", aguaTotal);
-        data.put("residuosEvitadosKg", residuosEvitados);
-        data.put("impactoPorCategoria", impactoPorCategoria);
+        Map<String, Object> ultimosUsuarios = new HashMap<>();
+        for (Usuario u : ultimos) {
+            Map<String, Object> info = new HashMap<>();
+            info.put("email", u.getEmail());
+            info.put("activo", u.isActivo());
+            info.put("rol", u.getRol());
+            ultimosUsuarios.put("usuario_" + u.getId(), info);
+        }
 
+        data.put("ultimosUsuarios", ultimosUsuarios);
         report.setData(data);
+
         return report;
-    }
-    public void recalcularImpactoAmbiental() {
-        // Este método simplemente volverá a generar el reporte ambiental
-        // y actualizará los totales internos si los estás guardando en memoria o base
     }
 
 
