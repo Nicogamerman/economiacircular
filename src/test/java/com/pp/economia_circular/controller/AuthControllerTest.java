@@ -9,7 +9,9 @@ import com.pp.economia_circular.repositories.MensajeRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.ArticleService;
 import com.pp.economia_circular.service.EventService;
+import com.pp.economia_circular.service.GoogleAuthService;
 import com.pp.economia_circular.service.JWTService;
+import com.pp.economia_circular.service.PasswordRecoveryService;
 import com.pp.economia_circular.service.RecyclingCenterService;
 import com.pp.economia_circular.service.ReportService;
 import com.pp.economia_circular.service.ServicioMensaje;
@@ -23,10 +25,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -54,6 +59,12 @@ class AuthControllerTest {
 
     @MockBean
     private JWTService jwtService;
+
+    @MockBean
+    private PasswordRecoveryService passwordRecoveryService;
+
+    @MockBean
+    private GoogleAuthService googleAuthService;
 
     @MockBean
     private ArticleService articleService;
@@ -102,6 +113,7 @@ class AuthControllerTest {
         usuarioActivo.setActivo(true);
         usuarioActivo.setCreadoEn(LocalDateTime.now());
         usuarioActivo.setActualizadoEn(LocalDateTime.now());
+        usuarioActivo.setAuthProvider("local");
 
         // Usuario inactivo
         usuarioInactivo = new Usuario();
@@ -114,6 +126,7 @@ class AuthControllerTest {
         usuarioInactivo.setActivo(false);
         usuarioInactivo.setCreadoEn(LocalDateTime.now());
         usuarioInactivo.setActualizadoEn(LocalDateTime.now());
+        usuarioInactivo.setAuthProvider("local");
     }
 
     @Test
@@ -482,25 +495,23 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Reset password con email inexistente retorna mensaje genérico por seguridad")
+    @DisplayName("Reset password con email inexistente retorna error")
     void testResetPasswordEmailInexistente() throws Exception {
-        // Arrange
+        // Arrange - Cambiar contraseña requiere oldPassword; si usuario no existe, 400
         String emailInexistente = "noexiste@test.com";
-        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\"}", emailInexistente);
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\",\"oldPassword\":\"old\"}", emailInexistente);
 
         when(usuarioRepository.findByEmail(emailInexistente)).thenReturn(Optional.empty());
 
-        // Act & Assert - Por seguridad, no revelar si el email existe
+        // Act & Assert
         mockMvc.perform(post("/api/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().string("Si el email existe, la contraseña ha sido actualizada"));
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Usuario no encontrado"));
 
-        // Verify - No debe guardar nada
         verify(usuarioRepository, times(1)).findByEmail(emailInexistente);
-
         verify(usuarioRepository, never()).save(any());
     }
 
@@ -508,7 +519,7 @@ class AuthControllerTest {
     @DisplayName("Reset password con usuario inactivo debe fallar")
     void testResetPasswordUsuarioInactivo() throws Exception {
         // Arrange
-        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\"}", usuarioInactivo.getEmail());
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\",\"oldPassword\":\"%s\"}", usuarioInactivo.getEmail(), TEST_PASSWORD);
 
         when(usuarioRepository.findByEmail(usuarioInactivo.getEmail())).thenReturn(Optional.of(usuarioInactivo));
 
@@ -545,10 +556,10 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Reset password sin nueva contraseña debe fallar")
-    void testResetPasswordSinNuevaContrasena() throws Exception {
+    @DisplayName("Reset password sin contraseña actual debe fallar")
+    void testResetPasswordSinOldPassword() throws Exception {
         // Arrange
-        String requestBody = String.format("{\"email\":\"%s\"}", TEST_EMAIL);
+        String requestBody = String.format("{\"email\":\"%s\",\"newPassword\":\"NewPass123!\"}", TEST_EMAIL);
 
         // Act & Assert
         mockMvc.perform(post("/api/auth/reset-password")
@@ -556,9 +567,25 @@ class AuthControllerTest {
                         .content(requestBody))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
+                .andExpect(content().string("La contraseña actual es requerida para cambiar la contraseña."));
+
+        verify(usuarioRepository, never()).findByEmail(anyString());
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Reset password sin nueva contraseña debe fallar")
+    void testResetPasswordSinNuevaContrasena() throws Exception {
+        // Arrange - solo email y oldPassword; newPassword falta, el controlador valida antes de buscar usuario
+        String requestBody = String.format("{\"email\":\"%s\",\"oldPassword\":\"%s\"}", TEST_EMAIL, TEST_PASSWORD);
+
+        mockMvc.perform(post("/api/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
                 .andExpect(content().string("Nueva contraseña es requerida"));
 
-        // Verify
         verify(usuarioRepository, never()).findByEmail(anyString());
         verify(usuarioRepository, never()).save(any());
     }
@@ -899,6 +926,270 @@ class AuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.claims").exists());
+    }
+
+    // ==================== TESTS PARA FORGOT PASSWORD ====================
+
+    @Test
+    @DisplayName("Forgot password con email válido devuelve mensaje genérico")
+    void testForgotPasswordExitoso() throws Exception {
+        String requestBody = String.format("{\"email\":\"%s\"}", TEST_EMAIL);
+        doNothing().when(passwordRecoveryService).solicitarRecuperacion(TEST_EMAIL);
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Si el correo está registrado")));
+
+        verify(passwordRecoveryService, times(1)).solicitarRecuperacion(TEST_EMAIL);
+    }
+
+    @Test
+    @DisplayName("Forgot password sin email debe fallar")
+    void testForgotPasswordSinEmail() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email es requerido"));
+
+        verify(passwordRecoveryService, never()).solicitarRecuperacion(anyString());
+    }
+
+    @Test
+    @DisplayName("Forgot password con email vacío debe fallar")
+    void testForgotPasswordEmailVacio() throws Exception {
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"\"}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email es requerido"));
+    }
+
+    // ==================== TESTS PARA RESET PASSWORD WITH TOKEN ====================
+
+    @Test
+    @DisplayName("Reset password con token exitoso")
+    void testResetPasswordWithTokenExitoso() throws Exception {
+        String token = "abc123token";
+        String newPassword = "NuevaPass123!";
+        String requestBody = String.format("{\"token\":\"%s\",\"newPassword\":\"%s\"}", token, newPassword);
+
+        when(passwordRecoveryService.restablecerConToken(token, newPassword)).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/reset-password-with-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Contraseña actualizada")));
+
+        verify(passwordRecoveryService, times(1)).restablecerConToken(token, newPassword);
+    }
+
+    @Test
+    @DisplayName("Reset password con token inválido o expirado")
+    void testResetPasswordWithTokenInvalido() throws Exception {
+        String requestBody = "{\"token\":\"tokenExpirado\",\"newPassword\":\"NuevaPass123!\"}";
+
+        when(passwordRecoveryService.restablecerConToken("tokenExpirado", "NuevaPass123!")).thenReturn(false);
+
+        mockMvc.perform(post("/api/auth/reset-password-with-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Token inválido o expirado")));
+    }
+
+    @Test
+    @DisplayName("Reset password with token sin token debe fallar")
+    void testResetPasswordWithTokenSinToken() throws Exception {
+        mockMvc.perform(post("/api/auth/reset-password-with-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"newPassword\":\"NuevaPass123!\"}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Token es requerido"));
+
+        verify(passwordRecoveryService, never()).restablecerConToken(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Reset password with token con contraseña corta debe fallar")
+    void testResetPasswordWithTokenContrasenaCorta() throws Exception {
+        mockMvc.perform(post("/api/auth/reset-password-with-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"abc\",\"newPassword\":\"12345\"}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("al menos 6 caracteres")));
+    }
+
+    // ==================== TESTS PARA LOGIN CON GOOGLE ====================
+
+    @Test
+    @DisplayName("Login con Google sin configurar retorna 503")
+    void testLoginGoogleNoConfigurado() throws Exception {
+        when(googleAuthService.isConfigured()).thenReturn(false);
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"fake-google-token\"}"))
+                .andDo(print())
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().string(containsString("no está configurado")));
+
+        verify(googleAuthService, times(1)).isConfigured();
+        verify(googleAuthService, never()).verifyToken(anyString());
+    }
+
+    @Test
+    @DisplayName("Login con Google sin idToken debe fallar")
+    void testLoginGoogleSinIdToken() throws Exception {
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("idToken es requerido"));
+
+        verify(googleAuthService, never()).verifyToken(anyString());
+    }
+
+    @Test
+    @DisplayName("Login con Google exitoso retorna JWT")
+    void testLoginGoogleExitoso() throws Exception {
+        GoogleIdToken.Payload payload = mock(GoogleIdToken.Payload.class);
+        doReturn("google-id-123").when(payload).getSubject();
+        doReturn("googleuser@test.com").when(payload).getEmail();
+        // name/given_name/family_name solo se usan al crear usuario nuevo; este test tiene usuario existente
+
+        Usuario usuario = new Usuario();
+        usuario.setId(5L);
+        usuario.setNombre("Google");
+        usuario.setApellido("User");
+        usuario.setEmail("googleuser@test.com");
+        usuario.setGoogleId("google-id-123");
+        usuario.setAuthProvider("google");
+        usuario.setRol("USER");
+        usuario.setActivo(true);
+        usuario.setCreadoEn(LocalDateTime.now());
+        usuario.setActualizadoEn(LocalDateTime.now());
+
+        when(googleAuthService.isConfigured()).thenReturn(true);
+        when(googleAuthService.verifyToken(anyString())).thenReturn(payload);
+        when(usuarioRepository.findByGoogleId("google-id-123")).thenReturn(Optional.of(usuario));
+        when(jwtService.generarToken("googleuser@test.com", "USER")).thenReturn(TEST_TOKEN);
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"valid-google-token\"}"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token", is(TEST_TOKEN)));
+
+        verify(googleAuthService).verifyToken("valid-google-token");
+        verify(jwtService).generarToken("googleuser@test.com", "USER");
+    }
+
+    @Test
+    @DisplayName("Login con Google token inválido retorna 401")
+    void testLoginGoogleTokenInvalido() throws Exception {
+        when(googleAuthService.isConfigured()).thenReturn(true);
+        when(googleAuthService.verifyToken("invalid-token")).thenReturn(null);
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"invalid-token\"}"))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string(containsString("Token de Google inválido")));
+
+        verify(usuarioRepository, never()).save(ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("Login con usuario solo Google (sin contraseña) debe indicar usar Google")
+    void testLoginUsuarioSoloGoogle() throws Exception {
+        Usuario usuarioGoogle = new Usuario();
+        usuarioGoogle.setId(10L);
+        usuarioGoogle.setNombre("Google");
+        usuarioGoogle.setApellido("User");
+        usuarioGoogle.setEmail("google@test.com");
+        usuarioGoogle.setContrasena(null);
+        usuarioGoogle.setGoogleId("google-sub-123");
+        usuarioGoogle.setAuthProvider("google");
+        usuarioGoogle.setRol("USER");
+        usuarioGoogle.setActivo(true);
+        usuarioGoogle.setCreadoEn(LocalDateTime.now());
+        usuarioGoogle.setActualizadoEn(LocalDateTime.now());
+
+        AuthRequest request = AuthRequest.builder()
+                .email("google@test.com")
+                .contrasena("cualquier")
+                .build();
+
+        when(usuarioRepository.findByEmail("google@test.com")).thenReturn(Optional.of(usuarioGoogle));
+
+        mockMvc.perform(post(LOGIN_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string(containsString("Iniciar con Google")));
+
+        verify(jwtService, never()).generarToken(anyString(), anyString());
+    }
+
+    // ==================== TESTS PARA LINK GOOGLE ====================
+
+    @Test
+    @DisplayName("Link Google sin autenticación retorna 401")
+    void testLinkGoogleSinAuth() throws Exception {
+        mockMvc.perform(post("/api/auth/link-google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"token\"}"))
+                .andDo(print())
+                .andExpect(status().isUnauthorized());
+        verify(googleAuthService, never()).verifyToken(anyString());
+    }
+
+    @Test
+    @DisplayName("Link Google exitoso con usuario autenticado")
+    @WithMockUser(username = "link@test.com", roles = "USER")
+    void testLinkGoogleExitoso() throws Exception {
+        Usuario usuarioActual = new Usuario();
+        usuarioActual.setId(7L);
+        usuarioActual.setEmail("link@test.com");
+        usuarioActual.setNombre("Link");
+        usuarioActual.setApellido("User");
+        usuarioActual.setAuthProvider("local");
+        usuarioActual.setCreadoEn(LocalDateTime.now());
+        usuarioActual.setActualizadoEn(LocalDateTime.now());
+
+        GoogleIdToken.Payload payload = mock(GoogleIdToken.Payload.class);
+        doReturn("google-sub-link").when(payload).getSubject();
+        doReturn("link@test.com").when(payload).getEmail();
+
+        when(jwtService.getCurrentUser()).thenReturn(usuarioActual);
+        when(googleAuthService.isConfigured()).thenReturn(true);
+        when(googleAuthService.verifyToken("link-token")).thenReturn(payload);
+        when(usuarioRepository.findByGoogleId("google-sub-link")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(ArgumentMatchers.any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post("/api/auth/link-google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"idToken\":\"link-token\"}"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("vinculada con Google")));
+
+        verify(usuarioRepository, times(1)).save(ArgumentMatchers.any(Usuario.class));
     }
 }
 

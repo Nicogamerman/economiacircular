@@ -1,14 +1,15 @@
 package com.pp.economia_circular.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
-    
-    // SERVICIO DE EMAIL DESACTIVADO TEMPORALMENTE - REQUIERE CONFIGURACIÓN DE MAIL
-    // @Autowired
-    // private JavaMailSender mailSender;
+
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
     
     public void sendVerificationEmail(String email, Long userId) {
         // SERVICIO DESACTIVADO TEMPORALMENTE
@@ -30,35 +31,35 @@ public class EmailService {
     }
     
     public void sendPasswordResetEmail(String email, Long userId) {
-        // SERVICIO DESACTIVADO TEMPORALMENTE
+        // Deprecado: usar sendPasswordResetWithToken
         System.out.println("Email de recuperación enviado a: " + email + " para usuario: " + userId);
-        /*
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject("Recuperación de Contraseña - Intercambio App");
-        message.setText("Hola,\n\n" +
-                "Recibimos una solicitud para restablecer tu contraseña. " +
-                "Para crear una nueva contraseña, haz clic en el siguiente enlace:\n\n" +
-                "http://localhost:8080/api/auth/reset-password?userId=" + userId + "\n\n" +
-                "Este enlace expirará en 24 horas.\n\n" +
-                "Si no solicitaste este cambio, puedes ignorar este email.\n\n" +
-                "Saludos,\n" +
-                "Equipo de Intercambio App");
-        
-        mailSender.send(message);
-        */
+    }
+
+    /**
+     * Envía email con enlace de recuperación de contraseña (token en URL).
+     * Si spring.mail está configurado, envía el correo real; si no, solo loguea (desarrollo).
+     */
+    public void sendPasswordResetWithToken(String email, String resetLink, int validMinutes) {
+        String subject = "Recuperación de contraseña - Economía Circular";
+        String text = "Hola,\n\n"
+                + "Recibimos una solicitud para restablecer tu contraseña.\n\n"
+                + "Haz clic en el siguiente enlace para elegir una nueva contraseña:\n\n"
+                + resetLink + "\n\n"
+                + "Este enlace expira en " + validMinutes + " minutos.\n\n"
+                + "Si no solicitaste este cambio, ignora este correo. Tu contraseña no se modificará.\n\n"
+                + "Saludos,\nEquipo Economía Circular";
+        sendNotificationEmail(email, subject, text);
     }
     
     public void sendNotificationEmail(String email, String subject, String content) {
-        // SERVICIO DESACTIVADO TEMPORALMENTE
-        System.out.println("Email de notificación enviado a: " + email + " - Asunto: " + subject);
-        /*
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setSubject(subject);
-        message.setText(content);
-        
-        mailSender.send(message);
-        */
+        if (mailSender != null) {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setSubject(subject);
+            message.setText(content);
+            mailSender.send(message);
+        } else {
+            System.out.println("[EmailService] Mail no configurado. Notificación: " + email + " - " + subject);
+        }
     }
 }

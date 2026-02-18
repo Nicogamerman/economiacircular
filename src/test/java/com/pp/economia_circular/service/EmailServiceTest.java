@@ -77,8 +77,8 @@ class EmailServiceTest {
 
         // Assert
         String output = outputStreamCaptor.toString();
-        assertThat(output).contains("Email de notificación enviado a: " + email);
-        assertThat(output).contains("Asunto: " + subject);
+        assertThat(output).contains(email);
+        assertThat(output).contains(subject);
     }
 
     @Test
@@ -241,7 +241,22 @@ class EmailServiceTest {
         // Verify que los métodos existen y son públicos
         assertNotNull(EmailService.class.getMethod("sendVerificationEmail", String.class, Long.class));
         assertNotNull(EmailService.class.getMethod("sendPasswordResetEmail", String.class, Long.class));
+        assertNotNull(EmailService.class.getMethod("sendPasswordResetWithToken", String.class, String.class, int.class));
         assertNotNull(EmailService.class.getMethod("sendNotificationEmail", String.class, String.class, String.class));
+    }
+
+    @Test
+    @DisplayName("sendPasswordResetWithToken construye enlace y llama a notificación")
+    void testSendPasswordResetWithToken() {
+        String email = "reset@test.com";
+        String resetLink = "http://localhost:3000/reset?token=abc123";
+        int validMinutes = 60;
+
+        emailService.sendPasswordResetWithToken(email, resetLink, validMinutes);
+
+        String output = outputStreamCaptor.toString();
+        assertThat(output).contains("reset@test.com");
+        assertThat(output).contains("Recuperación de contraseña");
     }
 
     @AfterEach

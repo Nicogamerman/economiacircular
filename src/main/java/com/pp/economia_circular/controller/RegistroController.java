@@ -54,6 +54,7 @@ public class RegistroController {
                 .email(request.getEmail())
                 .contrasena(passwordEncoder.encode(request.getContrasena()))
                 .rol(request.getRol())
+                .authProvider("local")
                 .domicilio(request.getDomicilio())
                 .foto(fotoBytes)
                 .activo(true)

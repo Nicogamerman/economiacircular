@@ -19,8 +19,16 @@ public class Usuario {
     private String nombre;
     private String apellido;
     private String email;
-    private String contrasena;
+    private String contrasena;  // nullable para usuarios que solo inician con Google
     private String rol;
+
+    /** ID del usuario en Google (sub del ID token). Permite login y vinculación. */
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
+    /** Proveedor de autenticación: "local" (email/contraseña) o "google". */
+    @Column(name = "auth_provider", length = 50)
+    private String authProvider = "local";
 
     private String domicilio;
 

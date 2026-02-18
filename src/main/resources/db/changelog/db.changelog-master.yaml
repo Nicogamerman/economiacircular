@@ -62,3 +62,16 @@ databaseChangeLog:
         - sql: TRUNCATE TABLE usuario;
         - sql: SET FOREIGN_KEY_CHECKS = 1;
 
+  - changeSet:
+      id: 3-password-reset-oauth
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/03-password-reset-and-oauth.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS password_reset_token;
+        - sql: ALTER TABLE usuario DROP COLUMN google_id;
+        - sql: ALTER TABLE usuario DROP COLUMN auth_provider;
+
