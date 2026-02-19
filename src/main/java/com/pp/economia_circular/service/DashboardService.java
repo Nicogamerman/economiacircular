@@ -96,6 +96,9 @@ public class DashboardService {
 
         DashboardChartsDto dto = new DashboardChartsDto();
 
+        // =========================
+        // Usuarios por mes
+        // =========================
         List<Object[]> usuariosRaw = usuarioRepository.countUsuariosAgrupadosPorMes();
 
         Map<String, Long> usuariosPorMes = new LinkedHashMap<>();
@@ -108,8 +111,44 @@ public class DashboardService {
 
         dto.setUsuariosPorMes(usuariosPorMes);
 
+        // =========================
+        // Intercambios completados por mes
+        // =========================
+        List<Object[]> intercambiosRaw =
+                solicitudRepository.countIntercambiosCompletadosPorMes();
+
+        Map<String, Long> intercambiosPorMes = new LinkedHashMap<>();
+
+        for (Object[] fila : intercambiosRaw) {
+            String mes = (String) fila[0];
+            Long cantidad = (Long) fila[1];
+            intercambiosPorMes.put(mes, cantidad);
+        }
+
+        dto.setIntercambiosCompletadosPorMes(intercambiosPorMes);
+
+        // =========================
+        // Tasa de éxito
+        // =========================
+        long totalSolicitudes = solicitudRepository.count();
+        long intercambiosCompletados =
+                solicitudRepository.countByEstado(
+                        SolicitudIntercambio.EstadoIntercambio.COMPLETADO);
+
+        dto.setTotalSolicitudes(totalSolicitudes);
+        dto.setIntercambiosCompletados(intercambiosCompletados);
+
+        double tasa = 0.0;
+
+        if (totalSolicitudes > 0) {
+            tasa = ((double) intercambiosCompletados / totalSolicitudes) * 100;
+        }
+
+        dto.setTasaExitoIntercambios(tasa);
+
         return dto;
     }
+
 
     // ==============================
     // DATOS PARA MAPA

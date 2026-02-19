@@ -9,6 +9,9 @@ import java.util.Map;
 public class DashboardChartsDto {
 
     private Map<String, Long> usuariosPorMes;
-    private Map<String, Long> articulosPorCategoria;
-    private Map<String, Long> intercambiosPorMes;
+    private Map<String, Long> intercambiosCompletadosPorMes;
+
+    private long totalSolicitudes;
+    private long intercambiosCompletados;
+    private double tasaExitoIntercambios;
 }
