@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import com.pp.economia_circular.entity.Articulo;
 
 import java.util.List;
 
@@ -52,5 +54,8 @@ public interface ArticleRepository extends JpaRepository<Articulo, Long> {
     List<Articulo> findMostViewedArticles(Pageable pageable);
 
     List<Articulo> findByUsuarioEmail(String email);
+    long countByEstado(Articulo.EstadoArticulo estado);
+    long countByCreadoEnAfter(LocalDateTime fecha);
+
 
 }
