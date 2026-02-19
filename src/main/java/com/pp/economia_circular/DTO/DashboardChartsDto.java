@@ -14,4 +14,7 @@ public class DashboardChartsDto {
     private long totalSolicitudes;
     private long intercambiosCompletados;
     private double tasaExitoIntercambios;
+    private Map<String, Long> articulosPorCategoria;
+
+
 }

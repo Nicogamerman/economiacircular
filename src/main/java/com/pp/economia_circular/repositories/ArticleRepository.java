@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import com.pp.economia_circular.entity.Articulo;
-
+import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 @Repository
@@ -56,6 +56,11 @@ public interface ArticleRepository extends JpaRepository<Articulo, Long> {
     List<Articulo> findByUsuarioEmail(String email);
     long countByEstado(Articulo.EstadoArticulo estado);
     long countByCreadoEnAfter(LocalDateTime fecha);
+
+    @Query("SELECT a.categoria, COUNT(a) " +
+            "FROM Articulo a " +
+            "GROUP BY a.categoria")
+    List<Object[]> countArticulosPorCategoria();
 
 
 }

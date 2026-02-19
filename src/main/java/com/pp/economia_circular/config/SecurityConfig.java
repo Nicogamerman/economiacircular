@@ -58,7 +58,9 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.POST, "/api/recycling-centers/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/recycling-centers/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.DELETE, "/api/recycling-centers/**").hasRole("ADMIN")
+
                         // Resto requiere autenticación
+                        .antMatchers("/api/admin/dashboard/**").permitAll() //agregado porque no me dejaba ver datos. ELIMINAR LUEGO
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling()

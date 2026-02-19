@@ -145,6 +145,22 @@ public class DashboardService {
         }
 
         dto.setTasaExitoIntercambios(tasa);
+        // =========================
+        // Artículos por categoría
+        // =========================
+        List<Object[]> categoriasRaw =
+                articleRepository.countArticulosPorCategoria();
+
+        Map<String, Long> articulosPorCategoria = new LinkedHashMap<>();
+
+        for (Object[] fila : categoriasRaw) {
+            String categoria = fila[0].toString();
+            Long cantidad = (Long) fila[1];
+            articulosPorCategoria.put(categoria, cantidad);
+        }
+
+        dto.setArticulosPorCategoria(articulosPorCategoria);
+
 
         return dto;
     }
