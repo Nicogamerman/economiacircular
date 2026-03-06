@@ -75,3 +75,14 @@ databaseChangeLog:
         - sql: ALTER TABLE usuario DROP COLUMN google_id;
         - sql: ALTER TABLE usuario DROP COLUMN auth_provider;
 
+  - changeSet:
+      id: 4-oferente-valoraciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/04-oferente-valoraciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS valoraciones_oferente;
+
