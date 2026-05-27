@@ -84,3 +84,16 @@ databaseChangeLog:
       rollback:
         - sql: DROP TABLE IF EXISTS password_reset_tokens;
 
+  - changeSet:
+      id: 5-imagenes-articulos-contenido
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/05-imagenes-articulos-contenido.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: ALTER TABLE imagenes_articulos DROP COLUMN tamano_bytes;
+        - sql: ALTER TABLE imagenes_articulos DROP COLUMN content_type;
+        - sql: ALTER TABLE imagenes_articulos DROP COLUMN contenido;
+
