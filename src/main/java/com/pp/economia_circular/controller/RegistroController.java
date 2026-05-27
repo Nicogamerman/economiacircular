@@ -3,6 +3,7 @@ package com.pp.economia_circular.controller;
 import com.pp.economia_circular.DTO.UsuarioRequest;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
+import com.pp.economia_circular.service.EmailVerificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,9 @@ public class RegistroController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired(required = false)
+    private EmailVerificationService emailVerificationService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -57,10 +61,20 @@ public class RegistroController {
                 .domicilio(request.getDomicilio())
                 .foto(fotoBytes)
                 .activo(true)
+                .emailVerificado(false)
                 .creadoEn(LocalDateTime.now())
                 .actualizadoEn(LocalDateTime.now())
                 .build();
-        usuarioRepository.save(usuario);
+        Usuario guardado = usuarioRepository.save(usuario);
+
+        if (emailVerificationService != null) {
+            try {
+                emailVerificationService.generarYEnviar(guardado);
+            } catch (Exception e) {
+                System.err.println("Error enviando email de verificación: " + e.getMessage());
+            }
+        }
+
         return ResponseEntity.ok().build();
     }
 

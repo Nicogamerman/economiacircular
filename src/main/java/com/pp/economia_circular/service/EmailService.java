@@ -46,6 +46,21 @@ public class EmailService {
         enviarSiEstaHabilitado(email, asunto, cuerpo);
     }
 
+    public void enviarEmailVerificacion(String email, String nombre, String verifyUrl, long ttlHoras) {
+        String saludo = (nombre != null && !nombre.trim().isEmpty()) ? "Hola " + nombre.trim() : "Hola";
+        String asunto = "Confirmá tu email - Economía Circular";
+        String cuerpo = saludo + ",\n\n" +
+                "¡Bienvenido/a a Economía Circular!\n" +
+                "Para activar tu cuenta y empezar a intercambiar, confirmá tu email en el siguiente enlace:\n\n" +
+                verifyUrl + "\n\n" +
+                "Este enlace expirará en " + ttlHoras + " horas.\n" +
+                "Si no te registraste en nuestra plataforma, podés ignorar este email.\n\n" +
+                "Saludos,\nEquipo de Economía Circular";
+
+        System.out.println("Email de verificación enviado a: " + email);
+        enviarSiEstaHabilitado(email, asunto, cuerpo);
+    }
+
     public void enviarEmailConfirmacionCambioPassword(String email, String nombre) {
         String saludo = (nombre != null && !nombre.trim().isEmpty()) ? "Hola " + nombre.trim() : "Hola";
         String asunto = "Tu contraseña fue actualizada - Economía Circular";

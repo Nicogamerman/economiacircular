@@ -108,3 +108,16 @@ databaseChangeLog:
       rollback:
         - sql: DROP TABLE IF EXISTS notificaciones;
 
+  - changeSet:
+      id: 7-email-verification
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/07-email-verification.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS email_verification_tokens;
+        - sql: ALTER TABLE usuario DROP COLUMN email_verificado_en;
+        - sql: ALTER TABLE usuario DROP COLUMN email_verificado;
+

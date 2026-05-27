@@ -6,9 +6,11 @@ import com.pp.economia_circular.DTO.ConfirmResetPasswordRequest;
 import com.pp.economia_circular.DTO.ForgotPasswordRequest;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
+import com.pp.economia_circular.service.EmailVerificationService;
 import com.pp.economia_circular.service.JWTService;
 import com.pp.economia_circular.service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,6 +34,12 @@ public class AuthController {
 
     @Autowired
     private PasswordResetService passwordResetService;
+
+    @Autowired(required = false)
+    private EmailVerificationService emailVerificationService;
+
+    @Value("${app.email-verification.required:false}")
+    private boolean emailVerificationRequired;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -90,6 +98,12 @@ public class AuthController {
                 System.out.println("==================");
                 
                 if (passwordMatches) {
+                    if (emailVerificationRequired && !usuario.isEmailVerificado()) {
+                        Map<String, Object> body = new HashMap<>();
+                        body.put("message", "Email no verificado. Revisá tu casilla o solicitá un nuevo enlace.");
+                        body.put("emailVerificado", false);
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+                    }
                     // Generar token con el rol del usuario
                     String token = jwtService.generarToken(usuario.getEmail(), usuario.getRol());
                     AuthResponse response = AuthResponse.builder()
@@ -181,6 +195,37 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al resetear contraseña: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        try {
+            if (emailVerificationService == null) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("Verificación de email no disponible");
+            }
+            emailVerificationService.verificar(token);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Email verificado correctamente");
+            response.put("verified", true);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            if (emailVerificationService != null) {
+                emailVerificationService.reenviar(request.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("Error procesando resend-verification: " + e.getMessage());
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Si el email está registrado y aún no fue verificado, recibirás un nuevo enlace.");
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/forgot-password")

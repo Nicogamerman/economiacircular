@@ -69,6 +69,9 @@ class RegistroControllerTest {
     @MockBean
     private ReportService reportService;
 
+    @MockBean
+    private EmailVerificationService emailVerificationService;
+
     @MockBean(name = "corsConfigurationSource")
     private CorsConfigurationSource corsConfigurationSource;
 
