@@ -4,6 +4,7 @@ import com.pp.economia_circular.DTO.ResumenValoracionDto;
 import com.pp.economia_circular.DTO.ValoracionCreateDto;
 import com.pp.economia_circular.DTO.ValoracionResponseDto;
 import com.pp.economia_circular.entity.Articulo;
+import com.pp.economia_circular.entity.Notificacion;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.entity.Valoracion;
 import com.pp.economia_circular.repositories.ArticleRepository;
@@ -31,6 +32,9 @@ public class ValoracionService {
 
     @Autowired
     private JWTService authService;
+
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
 
     public ValoracionResponseDto crear(ValoracionCreateDto dto) {
         Usuario valorador = authService.getCurrentUser();
@@ -61,7 +65,24 @@ public class ValoracionService {
         valoracion.setPuntaje(dto.getPuntaje());
         valoracion.setComentario(dto.getComentario());
 
-        return new ValoracionResponseDto(valoracionRepository.save(valoracion));
+        Valoracion guardada = valoracionRepository.save(valoracion);
+
+        if (notificacionService != null) {
+            String resumen = dto.getComentario() != null && !dto.getComentario().isEmpty()
+                    ? dto.getComentario()
+                    : "Recibiste una nueva valoración";
+            notificacionService.crear(
+                    valorado,
+                    valorador,
+                    Notificacion.TipoNotificacion.VALORACION_NUEVA,
+                    "Nueva valoración recibida (" + dto.getPuntaje() + "/5)",
+                    resumen,
+                    Notificacion.ReferenciaTipo.VALORACION,
+                    guardada.getId()
+            );
+        }
+
+        return new ValoracionResponseDto(guardada);
     }
 
     public ValoracionResponseDto actualizar(Long id, ValoracionCreateDto dto) {

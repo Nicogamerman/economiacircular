@@ -97,3 +97,14 @@ databaseChangeLog:
         - sql: ALTER TABLE imagenes_articulos DROP COLUMN content_type;
         - sql: ALTER TABLE imagenes_articulos DROP COLUMN contenido;
 
+  - changeSet:
+      id: 6-notificaciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/06-notificaciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS notificaciones;
+

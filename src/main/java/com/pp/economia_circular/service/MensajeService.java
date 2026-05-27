@@ -2,6 +2,7 @@ package com.pp.economia_circular.service;
 
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.entity.Mensaje;
+import com.pp.economia_circular.entity.Notificacion;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import com.pp.economia_circular.repositories.MensajeRepository;
@@ -29,6 +30,9 @@ public class MensajeService {
     @Autowired
     private JWTService authService;
 
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
+
     // 📩 Enviar mensaje
     public Mensaje enviarMensaje(Long destinatarioId, Long articuloId, String contenido) {
         Usuario remitente = authService.getCurrentUser();
@@ -43,7 +47,25 @@ public class MensajeService {
                 .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
 
         Mensaje mensaje = new Mensaje(contenido, remitente, destinatario, articulo);
-        return mensajeRepository.save(mensaje);
+        Mensaje guardado = mensajeRepository.save(mensaje);
+
+        if (notificacionService != null) {
+            String tituloArticulo = articulo.getTitulo() != null ? articulo.getTitulo() : "tu artículo";
+            String resumen = contenido != null && contenido.length() > 120
+                    ? contenido.substring(0, 117) + "..."
+                    : contenido;
+            notificacionService.crear(
+                    destinatario,
+                    remitente,
+                    Notificacion.TipoNotificacion.MENSAJE_NUEVO,
+                    "Nuevo mensaje sobre \"" + tituloArticulo + "\"",
+                    resumen,
+                    Notificacion.ReferenciaTipo.MENSAJE,
+                    guardado.getId()
+            );
+        }
+
+        return guardado;
     }
 
     // 💬 Obtener conversación entre dos usuarios
