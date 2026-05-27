@@ -39,8 +39,9 @@ public class SecurityConfig {
                         // Endpoints públicos
                         .antMatchers("/api/auth/**", "/api/registro/**", "/api/registrar/**", "/ping").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/events", "/api/events/upcoming", "/api/events/type/**", "/api/events/nearby").permitAll()
-                        .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**", 
-                                     "/api/articles/most-viewed", "/api/articles/user/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**",
+                                     "/api/articles/most-viewed", "/api/articles/user/**",
+                                     "/api/articles/subcategories", "/api/articles/brands", "/api/articles/tags").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles/{id}").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles/*/images", "/api/articles/*/images/*/file").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/recycling-centers", "/api/recycling-centers/type/**", "/api/recycling-centers/nearby").permitAll()

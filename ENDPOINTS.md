@@ -118,10 +118,31 @@ Endpoint de debug. **Body:** `{ "token": "..." }`. Devuelve las claims si es vá
 ### `GET /api/articles?page=0&size=10`  *(público)*
 Lista paginada de artículos.
 
-### `GET /api/articles/search?title=&category=&condition=&page=0&size=10`  *(público)*
-Búsqueda con filtros opcionales.
+### `GET /api/articles/search`  *(público)*
+Búsqueda con filtros opcionales (combinables, paginada).
+
+**Query params:**
+- `title` — busca solo en título (modo legacy)
+- `q` — búsqueda libre en título, descripción, subcategoría, marca, modelo y etiquetas
 - `category`: `ELECTRONICOS | ROPA | LIBROS | MUEBLES | HERRAMIENTAS | DEPORTES | DECORACION_HOGAR | COCINA | JARDIN | AUTOMOTRIZ | JUGUETES | SUMINISTROS_ARTE | INSTRUMENTOS_MUSICALES | OTROS`
 - `condition`: `NUEVO | USADO | REACONDICIONADO | AVERIADO`
+- `subcategoria` — texto exacto (ej. `celulares`)
+- `marca` — texto exacto (ej. `samsung`)
+- `tag` — etiqueta exacta (ej. `vintage`)
+- `page`, `size` (default 0, 10)
+
+> Si se pasa cualquiera de `q`, `subcategoria`, `marca` o `tag`, se usa el motor avanzado (incluye joins con etiquetas).
+
+### `GET /api/articles/subcategories?category=ELECTRONICOS`  *(público)*
+Lista de subcategorías distintas usadas. Si `category` se omite, devuelve todas.
+Devuelve: `["celulares", "notebooks", "tablets"]`
+
+### `GET /api/articles/brands?category=ELECTRONICOS`  *(público)*
+Marcas distintas usadas. Útil para autocomplete en el formulario.
+
+### `GET /api/articles/tags?limit=20`  *(público)*
+Top etiquetas más usadas en artículos `DISPONIBLE`.
+**Respuesta:** `[{ "etiqueta": "vintage", "cantidad": 12 }, ...]`
 
 ### `GET /api/articles/category/{category}`  *(público)*
 
@@ -139,13 +160,19 @@ Búsqueda con filtros opcionales.
 **Body:**
 ```json
 {
-  "title": "Bici rodado 26",
-  "description": "Usada pero en buen estado.",
-  "category": "DEPORTES",
+  "title": "iPhone 12 64GB",
+  "description": "Funciona perfecto, con caja y cargador.",
+  "category": "ELECTRONICOS",
+  "subcategoria": "celulares",
+  "marca": "Apple",
+  "modelo": "iPhone 12",
   "condition": "USADO",
-  "estado": "DISPONIBLE"
+  "estado": "DISPONIBLE",
+  "etiquetas": ["smartphone", "ios", "64gb"]
 }
 ```
+
+Los campos `subcategoria`, `marca`, `modelo` y `etiquetas` son opcionales pero recomendados — habilitan filtros y búsqueda libre. Las etiquetas se normalizan a lowercase y se deduplican automáticamente.
 
 ### `PUT /api/articles/{id}`  *(USER/ADMIN; solo el dueño)*
 

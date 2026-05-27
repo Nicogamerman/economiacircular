@@ -83,13 +83,48 @@ public class ArticleController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Articulo.CategoriaArticulo category,
             @RequestParam(required = false) Articulo.CondicionArticulo condition,
+            @RequestParam(required = false) String subcategoria,
+            @RequestParam(required = false) String marca,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             ArticleSearchDto searchDto = new ArticleSearchDto(title, category, condition);
+            searchDto.setSubcategoria(subcategoria);
+            searchDto.setMarca(marca);
+            searchDto.setTag(tag);
+            searchDto.setQ(q);
             Page<ArticleResponseDto> articles = articleService.searchArticles(searchDto, pageable);
             return ResponseEntity.ok(articles);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/subcategories")
+    public ResponseEntity<?> listarSubcategorias(@RequestParam(required = false) Articulo.CategoriaArticulo category) {
+        try {
+            return ResponseEntity.ok(articleService.listarSubcategorias(category));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/brands")
+    public ResponseEntity<?> listarMarcas(@RequestParam(required = false) Articulo.CategoriaArticulo category) {
+        try {
+            return ResponseEntity.ok(articleService.listarMarcas(category));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/tags")
+    public ResponseEntity<?> listarTopTags(@RequestParam(defaultValue = "20") int limit) {
+        try {
+            return ResponseEntity.ok(articleService.listarTopEtiquetas(limit));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

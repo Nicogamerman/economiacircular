@@ -32,7 +32,19 @@ public class Articulo {
     
     @Enumerated(EnumType.STRING)
     private CategoriaArticulo categoria;
-    
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String subcategoria;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String marca;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String modelo;
+
     @Enumerated(EnumType.STRING)
     private CondicionArticulo condicion;
     
@@ -58,6 +70,9 @@ public class Articulo {
     
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<VistaArticulo> vistas;
+
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<EtiquetaArticulo> etiquetas;
     
     // Constructores
     public Articulo() {

@@ -121,3 +121,17 @@ databaseChangeLog:
         - sql: ALTER TABLE usuario DROP COLUMN email_verificado_en;
         - sql: ALTER TABLE usuario DROP COLUMN email_verificado;
 
+  - changeSet:
+      id: 8-mejor-categorizacion
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/08-mejor-categorizacion.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS etiquetas_articulos;
+        - sql: ALTER TABLE articulos DROP COLUMN modelo;
+        - sql: ALTER TABLE articulos DROP COLUMN marca;
+        - sql: ALTER TABLE articulos DROP COLUMN subcategoria;
+
