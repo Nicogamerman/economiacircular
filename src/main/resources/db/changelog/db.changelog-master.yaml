@@ -62,3 +62,14 @@ databaseChangeLog:
         - sql: TRUNCATE TABLE usuario;
         - sql: SET FOREIGN_KEY_CHECKS = 1;
 
+  - changeSet:
+      id: 3-valoraciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/03-valoraciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS valoraciones;
+
