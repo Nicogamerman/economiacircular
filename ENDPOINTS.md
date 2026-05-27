@@ -22,7 +22,8 @@ Documentación de los endpoints REST del backend, pensada para el consumo desde 
 9. [Centros de reciclaje](#9-centros-de-reciclaje)
 10. [Talleres](#10-talleres)
 11. [Reportes y métricas](#11-reportes-y-métricas)
-12. [Health-check](#12-health-check)
+12. [Dashboard de métricas (gráficos y mapas)](#12-dashboard-de-métricas-gráficos-y-mapas)
+13. [Health-check](#13-health-check)
 
 ---
 
@@ -354,7 +355,96 @@ Endpoints agregados para dashboards. Todos requieren auth.
 
 ---
 
-## 12. Health-check
+## 12. Dashboard de métricas (gráficos y mapas)
+
+Endpoints diseñados para alimentar un panel administrativo con tarjetas resumen, gráficos de líneas/barras/donuts y mapas. **Todos requieren rol ADMIN.**
+
+### `GET /api/metrics/dashboard`
+Resumen consolidado con todas las métricas clave del producto.
+
+**Respuesta:**
+```json
+{
+  "generatedAt": "2026-05-27T22:00:00",
+  "usuariosTotales": 124,
+  "usuariosActivos": 110,
+  "usuariosNuevosUltimos30Dias": 18,
+  "crecimientoUsuariosPctMesActualVsAnterior": 15.0,
+  "articulosTotales": 412,
+  "articulosDisponibles": 287,
+  "articulosPublicadosUltimos30Dias": 53,
+  "crecimientoArticulosPctMesActualVsAnterior": 8.2,
+  "intercambiosTotales": 90,
+  "intercambiosPendientes": 12,
+  "intercambiosCompletados": 64,
+  "intercambiosUltimos30Dias": 22,
+  "eventosTotales": 14,
+  "eventosActivos": 6,
+  "centrosReciclajeTotales": 10,
+  "centrosReciclajeActivos": 9,
+  "mensajesTotales": 1287,
+  "valoracionesTotales": 78,
+  "promedioValoraciones": 4.6
+}
+```
+
+### `GET /api/metrics/timeline/users?months=12`
+Serie temporal de **usuarios nuevos por mes** para los últimos N meses (default 12, máx 60). Pensado para gráficos de línea/barras.
+
+**Respuesta:**
+```json
+[
+  { "periodo": "2025-06", "valor": 4 },
+  { "periodo": "2025-07", "valor": 9 },
+  { "periodo": "2025-08", "valor": 12 }
+]
+```
+
+### `GET /api/metrics/timeline/articles?months=12`
+Misma estructura. Publicaciones nuevas por mes.
+
+### `GET /api/metrics/timeline/exchanges?months=12`
+Solicitudes de intercambio creadas por mes.
+
+### `GET /api/metrics/distribution/articles-by-category`
+Distribución de artículos por categoría (donut/pie chart).
+
+**Respuesta:**
+```json
+[
+  { "label": "ELECTRONICOS", "cantidad": 42, "porcentaje": 10.2 },
+  { "label": "ROPA", "cantidad": 78, "porcentaje": 18.9 }
+]
+```
+
+### `GET /api/metrics/distribution/articles-by-status`
+Distribución por estado (`DISPONIBLE`, `INTERCAMBIADO`, etc).
+
+### `GET /api/metrics/geo/events`
+Eventos con coordenadas (para mapa). Filtra los que tienen `latitude/longitude`.
+
+**Respuesta:**
+```json
+[
+  {
+    "id": 4,
+    "nombre": "Feria de intercambio en Belgrano",
+    "descripcion": "Encuentro mensual de la comunidad...",
+    "latitud": -34.5631,
+    "longitud": -58.4544,
+    "tipo": "EVENTO",
+    "categoria": "FAIR",
+    "estado": "ACTIVE"
+  }
+]
+```
+
+### `GET /api/metrics/geo/recycling-centers`
+Centros de reciclaje con coordenadas. Misma estructura, `tipo` = `"CENTRO_RECICLAJE"`.
+
+---
+
+## 13. Health-check
 
 ### `GET /ping`  *(público)*
 Devuelve `pong` para verificar que la API está viva.
