@@ -73,3 +73,14 @@ databaseChangeLog:
       rollback:
         - sql: DROP TABLE IF EXISTS valoraciones;
 
+  - changeSet:
+      id: 4-password-reset-tokens
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/04-password-reset-tokens.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS password_reset_tokens;
+

@@ -10,6 +10,7 @@ import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.ArticleService;
 import com.pp.economia_circular.service.EventService;
 import com.pp.economia_circular.service.JWTService;
+import com.pp.economia_circular.service.PasswordResetService;
 import com.pp.economia_circular.service.RecyclingCenterService;
 import com.pp.economia_circular.service.ReportService;
 import com.pp.economia_circular.service.ServicioMensaje;
@@ -54,6 +55,9 @@ class AuthControllerTest {
 
     @MockBean
     private JWTService jwtService;
+
+    @MockBean
+    private PasswordResetService passwordResetService;
 
     @MockBean
     private ArticleService articleService;

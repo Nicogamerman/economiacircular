@@ -2,15 +2,20 @@ package com.pp.economia_circular.controller;
 
 import com.pp.economia_circular.DTO.AuthRequest;
 import com.pp.economia_circular.DTO.AuthResponse;
+import com.pp.economia_circular.DTO.ConfirmResetPasswordRequest;
+import com.pp.economia_circular.DTO.ForgotPasswordRequest;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.JWTService;
+import com.pp.economia_circular.service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,6 +29,9 @@ public class AuthController {
 
     @Autowired
     private JWTService jwtService;
+
+    @Autowired
+    private PasswordResetService passwordResetService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -172,6 +180,37 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al resetear contraseña: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            passwordResetService.solicitarRecuperacion(request.getEmail());
+        } catch (Exception e) {
+            System.err.println("Error procesando forgot-password: " + e.getMessage());
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam String token) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", passwordResetService.validarToken(token));
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/confirm-reset-password")
+    public ResponseEntity<?> confirmResetPassword(@Valid @RequestBody ConfirmResetPasswordRequest request) {
+        try {
+            passwordResetService.confirmarCambioPassword(request.getToken(), request.getNewPassword());
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Contraseña actualizada exitosamente");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
