@@ -24,7 +24,8 @@ Documentación de los endpoints REST del backend, pensada para el consumo desde 
 11. [Reportes y métricas](#11-reportes-y-métricas)
 12. [Dashboard de métricas (gráficos y mapas)](#12-dashboard-de-métricas-gráficos-y-mapas)
 13. [Artículos favoritos](#13-artículos-favoritos)
-14. [Health-check](#14-health-check)
+14. [Intercambios](#14-intercambios)
+15. [Health-check](#15-health-check)
 
 ---
 
@@ -527,7 +528,79 @@ Devuelve cuántos usuarios tienen el artículo como favorito.
 
 ---
 
-## 14. Health-check
+## 14. Intercambios
+
+Base path: `/api/intercambios` | Todos requieren JWT.
+
+### `POST /api/intercambios` *(USER / ADMIN)*
+Crea una solicitud de intercambio. El solicitante ofrece su artículo a cambio del artículo de otro usuario.
+
+**Body:**
+```json
+{ "articuloSolicitadoId": 10, "articuloOfrecidoId": 5 }
+```
+
+**Respuesta 201:** `SolicitudResponseDto` con todos los detalles.
+
+**Validaciones:** artículos DISPONIBLE, el ofrecido debe ser del solicitante, no puede solicitar el propio artículo, no puede haber una solicitud pendiente duplicada.
+
+### `GET /api/intercambios/mis-solicitudes` *(USER / ADMIN)*
+Lista las solicitudes enviadas por el usuario autenticado (paginado).
+
+| Param | Default |
+|---|---|
+| `page` | 0 |
+| `size` | 10 |
+
+### `GET /api/intercambios/recibidas` *(USER / ADMIN)*
+Lista las solicitudes recibidas para los artículos del usuario autenticado (paginado).
+
+### `GET /api/intercambios/historial` *(USER / ADMIN)*
+Lista todas las solicitudes en las que participa el usuario (como solicitante o propietario), ordenadas por fecha descendente. Ideal para el historial completo.
+
+### `GET /api/intercambios/{id}` *(USER / ADMIN)*
+Obtiene el detalle de una solicitud específica. Solo accesible por el solicitante, el propietario del artículo o un ADMIN.
+
+**Respuesta 200:**
+```json
+{
+  "id": 1,
+  "estado": "PENDIENTE",
+  "articuloSolicitadoId": 10,
+  "articuloSolicitadoTitulo": "Bicicleta de montaña",
+  "propietarioArticuloSolicitadoId": 3,
+  "propietarioArticuloSolicitadoEmail": "juan@example.com",
+  "articuloOfrecidoId": 5,
+  "articuloOfrecidoTitulo": "Raqueta de tenis",
+  "solicitanteId": 7,
+  "solicitanteEmail": "ana@example.com",
+  "solicitanteNombre": "Ana García",
+  "creadoEn": "2025-03-01T10:00:00",
+  "actualizadoEn": "2025-03-01T10:00:00"
+}
+```
+
+### `PUT /api/intercambios/{id}/estado` *(USER / ADMIN)*
+Cambia el estado de una solicitud. Las transiciones válidas son:
+
+| Quién | Puede cambiar a |
+|---|---|
+| Solicitante | `CANCELADO` |
+| Propietario del artículo | `ACEPTADO`, `RECHAZADO` (desde PENDIENTE) |
+| Propietario del artículo | `COMPLETADO` (desde ACEPTADO) |
+| ADMIN | Cualquier transición válida |
+
+**Body:**
+```json
+{ "nuevoEstado": "ACEPTADO" }
+```
+Estados posibles: `PENDIENTE`, `ACEPTADO`, `RECHAZADO`, `COMPLETADO`, `CANCELADO`.
+
+Al cambiar estado se genera una notificación automática a la otra parte.
+
+---
+
+## 15. Health-check
 
 ### `GET /ping`  *(público)*
 Devuelve `pong` para verificar que la API está viva.
