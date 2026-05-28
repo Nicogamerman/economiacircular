@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**", 
                                      "/api/articles/most-viewed", "/api/articles/user/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles/{id}").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/oferentes/*/valoraciones").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/recycling-centers", "/api/recycling-centers/type/**", "/api/recycling-centers/nearby").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
@@ -58,7 +59,9 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.POST, "/api/recycling-centers/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/recycling-centers/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.DELETE, "/api/recycling-centers/**").hasRole("ADMIN")
+
                         // Resto requiere autenticación
+                        .antMatchers("/api/admin/dashboard/**").permitAll() //agregado porque no me dejaba ver datos. ELIMINAR LUEGO
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling()

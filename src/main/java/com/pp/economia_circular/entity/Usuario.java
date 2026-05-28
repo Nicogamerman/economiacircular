@@ -37,6 +37,9 @@ public class Usuario {
     private byte[] foto;
 
     private boolean activo = true;
+    @Column(name = "creado_en")
     private LocalDateTime creadoEn;
+    @Column(name = "actualizado_en")
     private LocalDateTime actualizadoEn;
+
 }

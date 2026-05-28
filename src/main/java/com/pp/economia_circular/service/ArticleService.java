@@ -26,6 +26,9 @@ public class ArticleService {
     @Autowired
     private JWTService authService;
 
+    @Autowired
+    private NotificacionService notificacionService;
+
     public ArticleResponseDto createArticle(ArticleCreateDto createDto) {
         Usuario currentUser = authService.getCurrentUser();
         if (currentUser == null) {
@@ -38,8 +41,20 @@ public class ArticleService {
         article.setCategoria(createDto.getCategory());
         article.setCondicion(createDto.getCondition());
         article.setUsuario(currentUser);
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(currentUser.getRol());
+        article.setEstado(isAdmin
+                ? Articulo.EstadoArticulo.DISPONIBLE
+                : Articulo.EstadoArticulo.PENDIENTE_APROBACION);
 
         Articulo savedArticle = articleRepository.save(article);
+        if (!isAdmin && notificacionService != null) {
+            notificacionService.crear(
+                    currentUser,
+                    savedArticle,
+                    "Pendiente de aprobacion: tu articulo \"" + savedArticle.getTitulo() + "\" sera revisado por un administrador antes de publicarse.",
+                    "ARTICULO_PENDIENTE_APROBACION"
+            );
+        }
         return convertToResponseDto(savedArticle);
     }
 
@@ -72,6 +87,35 @@ public class ArticleService {
             throw new RuntimeException("Usuario no autenticado");
         }
         return getArticlesByUser(currentUser.getId());
+    }
+
+    public List<ArticleResponseDto> getPendingApprovalArticles() {
+        return articleRepository.findByEstado(Articulo.EstadoArticulo.PENDIENTE_APROBACION).stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public ArticleResponseDto approveArticle(Long id) {
+        Usuario currentUser = authService.getCurrentUser();
+        if (currentUser == null || !"ADMIN".equalsIgnoreCase(currentUser.getRol())) {
+            throw new RuntimeException("No tienes permisos para aprobar articulos");
+        }
+
+        Articulo articulo = articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Articulo no encontrado"));
+
+        articulo.setEstado(Articulo.EstadoArticulo.DISPONIBLE);
+        articulo.setActualizadoEn(LocalDateTime.now());
+        Articulo approved = articleRepository.save(articulo);
+
+        notificacionService.crear(
+                approved.getUsuario(),
+                approved,
+                "Tu articulo \"" + approved.getTitulo() + "\" fue aprobado y ya esta publicado.",
+                "ARTICULO_APROBADO"
+        );
+
+        return convertToResponseDto(approved);
     }
 
     public List<ArticleResponseDto> getArticlesByCategory(Articulo.CategoriaArticulo category) {
@@ -109,7 +153,9 @@ public class ArticleService {
         articulo.setDescripcion(updateDto.getDescription());
         articulo.setCategoria(updateDto.getCategory());
         articulo.setCondicion(updateDto.getCondition());
-        articulo.setEstado(updateDto.getEstado());
+        if (updateDto.getEstado() != null) {
+            articulo.setEstado(updateDto.getEstado());
+        }
         articulo.setActualizadoEn(LocalDateTime.now());
 
         Articulo updated = articleRepository.save(articulo);
