@@ -25,7 +25,8 @@ Documentación de los endpoints REST del backend, pensada para el consumo desde 
 12. [Dashboard de métricas (gráficos y mapas)](#12-dashboard-de-métricas-gráficos-y-mapas)
 13. [Artículos favoritos](#13-artículos-favoritos)
 14. [Intercambios](#14-intercambios)
-15. [Health-check](#15-health-check)
+15. [Chat de soporte](#15-chat-de-soporte)
+16. [Health-check](#16-health-check)
 
 ---
 
@@ -600,7 +601,80 @@ Al cambiar estado se genera una notificación automática a la otra parte.
 
 ---
 
-## 15. Health-check
+## 15. Chat de soporte
+
+Base path: `/api/soporte` | Todos requieren JWT salvo donde se indica.
+
+### `POST /api/soporte` *(USER / ADMIN)*
+Abre un nuevo chat de soporte con un mensaje inicial.
+
+**Body:**
+```json
+{
+  "asunto": "No puedo subir imágenes",
+  "mensajeInicial": "Cuando intento subir una foto me da error 400.",
+  "prioridad": "ALTA"
+}
+```
+Prioridades: `BAJA`, `MEDIA` (default), `ALTA`.
+
+**Respuesta 201:** `SoporteChatResponseDto`.
+
+### `POST /api/soporte/{chatId}/mensajes` *(USER / ADMIN)*
+Envía un mensaje en un chat existente. El usuario solo puede escribir en sus propios chats; los admins pueden escribir en cualquiera.
+
+**Body:**
+```json
+{ "contenido": "Gracias, ya lo revisamos." }
+```
+**Respuesta 201:** `MensajeSoporteResponseDto` con `esAdmin: true/false` para distinguir quién escribe.
+
+Al responder un admin, el chat pasa automáticamente a `EN_PROGRESO`.
+
+### `GET /api/soporte/mis-chats` *(USER / ADMIN)*
+Lista los chats del usuario autenticado, ordenados por última actividad. Incluye `mensajesNoLeidos`.
+
+| Param | Default |
+|---|---|
+| `page` | 0 |
+| `size` | 10 |
+
+### `GET /api/soporte` *(solo ADMIN)*
+Lista todos los chats de soporte. Acepta filtro por estado.
+
+| Param | Tipo | Descripción |
+|---|---|---|
+| `estado` | string | Filtra por `ABIERTO`, `EN_PROGRESO`, `RESUELTO`, `CERRADO` |
+| `page` | int | 0 |
+| `size` | int | 20 |
+
+### `GET /api/soporte/{chatId}/mensajes` *(USER / ADMIN)*
+Lista todos los mensajes de un chat en orden cronológico. Accesible solo por el dueño del chat o un admin.
+
+**Respuesta 200:** Array de `MensajeSoporteResponseDto`.
+
+### `PUT /api/soporte/{chatId}/estado` *(solo ADMIN)*
+Cambia el estado de un chat.
+
+**Body:**
+```json
+{ "estado": "RESUELTO" }
+```
+Estados: `ABIERTO`, `EN_PROGRESO`, `RESUELTO`, `CERRADO`.
+
+Al cerrar/resolver se envía una notificación automática al usuario.
+
+### `PUT /api/soporte/{chatId}/mensajes/leer` *(USER / ADMIN)*
+Marca como leídos los mensajes del chat que no fueron enviados por el usuario autenticado.
+
+**Respuesta 200:**
+```json
+{ "mensajesMarcados": 3 }
+```
+
+---
+
+## 16. Health-check
 
 ### `GET /ping`  *(público)*
 Devuelve `pong` para verificar que la API está viva.

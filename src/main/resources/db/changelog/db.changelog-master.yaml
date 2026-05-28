@@ -146,3 +146,15 @@ databaseChangeLog:
       rollback:
         - sql: DROP TABLE IF EXISTS favoritos;
 
+  - changeSet:
+      id: 10-soporte-chat
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/10-soporte-chat.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS mensajes_soporte;
+        - sql: DROP TABLE IF EXISTS soporte_chats;
+
