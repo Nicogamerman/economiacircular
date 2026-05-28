@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.GET, "/api/valoraciones/usuario/**", "/api/valoraciones/articulo/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/politicas", "/api/politicas/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/favoritos/*/count").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/usuarios/perfil/**", "/api/usuarios/*/foto").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")

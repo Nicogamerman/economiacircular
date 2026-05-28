@@ -14,6 +14,8 @@ import java.util.List;
 public interface ArticleRepository extends JpaRepository<Articulo, Long> {
     
     List<Articulo> findByUsuario_Id(Long userId);
+
+    long countByUsuario_IdAndEstado(Long usuarioId, Articulo.EstadoArticulo estado);
     
     List<Articulo> findByCategoria(Articulo.CategoriaArticulo categoria);
     
