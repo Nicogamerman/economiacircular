@@ -2,6 +2,7 @@ package com.pp.economia_circular.repositories;
 
 import com.pp.economia_circular.entity.SolicitudIntercambio;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.Query;
@@ -14,12 +15,13 @@ public interface SolicitudIntercambioRepository extends JpaRepository<SolicitudI
     long countByCreadoEnAfter(LocalDateTime fecha);
 
 
-    @Query("SELECT FUNCTION('DATE_FORMAT', s.creadoEn, '%Y-%m'), COUNT(s) " +
+    @Query("SELECT YEAR(s.creadoEn), MONTH(s.creadoEn), COUNT(s) " +
             "FROM SolicitudIntercambio s " +
-            "WHERE s.estado = 'COMPLETADO' " +
-            "GROUP BY FUNCTION('DATE_FORMAT', s.creadoEn, '%Y-%m') " +
-            "ORDER BY FUNCTION('DATE_FORMAT', s.creadoEn, '%Y-%m')")
-    List<Object[]> countIntercambiosCompletadosPorMes();
+            "WHERE s.estado = :estado " +
+            "GROUP BY YEAR(s.creadoEn), MONTH(s.creadoEn) " +
+            "ORDER BY YEAR(s.creadoEn), MONTH(s.creadoEn)")
+    List<Object[]> countIntercambiosPorMesPorEstado(
+            @Param("estado") SolicitudIntercambio.EstadoIntercambio estado);
 
 
 

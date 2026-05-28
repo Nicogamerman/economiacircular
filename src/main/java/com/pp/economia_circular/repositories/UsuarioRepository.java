@@ -16,8 +16,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     long countByActivoTrue();
     long countByCreadoEnAfter(LocalDateTime fecha);
 
-    @Query("SELECT FUNCTION('DATE_FORMAT', u.creadoEn, '%Y-%m') as mes, COUNT(u) " +
-            "FROM Usuario u GROUP BY FUNCTION('DATE_FORMAT', u.creadoEn, '%Y-%m')")
+    @Query("SELECT YEAR(u.creadoEn), MONTH(u.creadoEn), COUNT(u) " +
+            "FROM Usuario u GROUP BY YEAR(u.creadoEn), MONTH(u.creadoEn) " +
+            "ORDER BY YEAR(u.creadoEn), MONTH(u.creadoEn)")
     List<Object[]> countUsuariosAgrupadosPorMes();
 
 }

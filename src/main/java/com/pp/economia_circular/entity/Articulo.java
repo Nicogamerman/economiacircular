@@ -1,6 +1,7 @@
 package com.pp.economia_circular.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -89,11 +90,24 @@ public class Articulo {
     }
     @Getter
     public enum CondicionArticulo {
-        COMO_NUEVO, USADO, REACONDICIONADO, AVERIADO, BUENO
+        COMO_NUEVO, USADO, REACONDICIONADO, AVERIADO, BUENO;
+
+        @JsonCreator
+        public static CondicionArticulo fromValue(String value) {
+            if (value == null) {
+                return null;
+            }
+            String normalized = value.trim().toUpperCase();
+            if ("NUEVO".equals(normalized)) {
+                return COMO_NUEVO;
+            }
+            return CondicionArticulo.valueOf(normalized);
+        }
     }
     @Getter
     public enum EstadoArticulo {
         DISPONIBLE,
+        PENDIENTE_APROBACION,
         INTERCAMBIADO,
         RESERVADO,
         DONADO,

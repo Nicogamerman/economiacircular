@@ -51,6 +51,9 @@ public class ValoracionOferente {
     @Column(name = "comentario", length = 1000)
     private String comentario;
 
+    @Column(name = "aprobado", nullable = false)
+    private boolean aprobado = false;
+
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 

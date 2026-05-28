@@ -11,12 +11,21 @@ import java.util.List;
 @Repository
 public interface OferenteValoracionRepository extends JpaRepository<ValoracionOferente, Long> {
 
-    List<ValoracionOferente> findByOferente_IdOrderByCreadoEnDesc(Long oferenteId);
+    List<ValoracionOferente> findByOferente_IdAndAprobadoTrueOrderByCreadoEnDesc(Long oferenteId);
+
+    List<ValoracionOferente> findAllByOrderByAprobadoAscCreadoEnDesc();
 
     boolean existsByAutor_IdAndArticulo_Id(Long autorId, Long articuloId);
 
-    long countByOferente_Id(Long oferenteId);
+    long countByOferente_IdAndAprobadoTrue(Long oferenteId);
 
-    @Query("SELECT AVG(v.puntuacion) FROM ValoracionOferente v WHERE v.oferente.id = :oferenteId")
+    long countByAprobadoTrue();
+
+    long countByAprobadoFalse();
+
+    @Query("SELECT AVG(v.puntuacion) FROM ValoracionOferente v WHERE v.oferente.id = :oferenteId AND v.aprobado = true")
     Double findAverageRatingByOferenteId(@Param("oferenteId") Long oferenteId);
+
+    @Query("SELECT AVG(v.puntuacion) FROM ValoracionOferente v WHERE v.aprobado = true")
+    Double findAverageApprovedRating();
 }

@@ -129,6 +129,26 @@ public class ArticleController {
         }
     }
 
+    @GetMapping("/pending-approval")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getPendingApprovalArticles() {
+        try {
+            return ResponseEntity.ok(articleService.getPendingApprovalArticles());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveArticle(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(articleService.approveArticle(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getArticlesByUser(@PathVariable Long userId) {
         try {

@@ -2,6 +2,7 @@ package com.pp.economia_circular.service;
 
 import com.pp.economia_circular.DTO.OferenteValoracionCreateDto;
 import com.pp.economia_circular.DTO.OferenteValoracionResponseDto;
+import com.pp.economia_circular.DTO.OferenteValoracionUpdateDto;
 import com.pp.economia_circular.DTO.OferenteValoracionesSummaryDto;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.entity.Usuario;
@@ -37,7 +38,7 @@ public class OferenteValoracionService {
                 .orElseThrow(() -> new RuntimeException("Oferente no encontrado"));
 
         List<OferenteValoracionResponseDto> reviews = valoracionRepository
-                .findByOferente_IdOrderByCreadoEnDesc(oferenteId)
+                .findByOferente_IdAndAprobadoTrueOrderByCreadoEnDesc(oferenteId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -85,25 +86,68 @@ public class OferenteValoracionService {
         valoracion.setArticulo(articulo);
         valoracion.setPuntuacion(createDto.getRating());
         valoracion.setComentario(createDto.getComment());
+        valoracion.setAprobado(false);
 
         ValoracionOferente saved = valoracionRepository.save(valoracion);
         return toResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public List<OferenteValoracionResponseDto> getAllReviewsForAdmin() {
+        return valoracionRepository.findAllByOrderByAprobadoAscCreadoEnDesc()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public OferenteValoracionResponseDto updateReviewAsAdmin(Long id, OferenteValoracionUpdateDto updateDto) {
+        ValoracionOferente valoracion = valoracionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Valoracion no encontrada"));
+
+        if (updateDto.getRating() != null) {
+            valoracion.setPuntuacion(updateDto.getRating());
+        }
+        if (updateDto.getComment() != null) {
+            valoracion.setComentario(updateDto.getComment());
+        }
+        if (updateDto.getApproved() != null) {
+            valoracion.setAprobado(updateDto.getApproved());
+        }
+
+        return toResponse(valoracionRepository.save(valoracion));
+    }
+
+    public OferenteValoracionResponseDto approveReview(Long id) {
+        ValoracionOferente valoracion = valoracionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Valoracion no encontrada"));
+        valoracion.setAprobado(true);
+        return toResponse(valoracionRepository.save(valoracion));
+    }
+
     private OferenteValoracionResponseDto toResponse(ValoracionOferente valoracion) {
         Usuario autor = valoracion.getAutor();
+        Usuario oferente = valoracion.getOferente();
         String reviewerName = (autor.getNombre() != null && !autor.getNombre().trim().isEmpty())
                 ? autor.getNombre()
                 : autor.getEmail();
+        String oferenteName = (oferente.getNombre() != null && !oferente.getNombre().trim().isEmpty())
+                ? oferente.getNombre()
+                : oferente.getEmail();
 
         return OferenteValoracionResponseDto.builder()
                 .id(valoracion.getId())
                 .reviewerId(autor.getId())
                 .reviewerName(reviewerName)
+                .reviewerEmail(autor.getEmail())
+                .oferenteId(oferente.getId())
+                .oferenteName(oferenteName)
                 .articleId(valoracion.getArticulo().getId())
+                .articleTitle(valoracion.getArticulo().getTitulo())
                 .rating(valoracion.getPuntuacion())
                 .comment(valoracion.getComentario())
+                .approved(valoracion.isAprobado())
                 .createdAt(valoracion.getCreadoEn())
+                .updatedAt(valoracion.getActualizadoEn())
                 .build();
     }
 }

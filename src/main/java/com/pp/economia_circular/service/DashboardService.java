@@ -104,8 +104,8 @@ public class DashboardService {
         Map<String, Long> usuariosPorMes = new LinkedHashMap<>();
 
         for (Object[] fila : usuariosRaw) {
-            String mes = (String) fila[0];
-            Long cantidad = (Long) fila[1];
+            String mes = formatearMes(fila[0], fila[1]);
+            Long cantidad = (Long) fila[2];
             usuariosPorMes.put(mes, cantidad);
         }
 
@@ -115,13 +115,14 @@ public class DashboardService {
         // Intercambios completados por mes
         // =========================
         List<Object[]> intercambiosRaw =
-                solicitudRepository.countIntercambiosCompletadosPorMes();
+                solicitudRepository.countIntercambiosPorMesPorEstado(
+                        SolicitudIntercambio.EstadoIntercambio.COMPLETADO);
 
         Map<String, Long> intercambiosPorMes = new LinkedHashMap<>();
 
         for (Object[] fila : intercambiosRaw) {
-            String mes = (String) fila[0];
-            Long cantidad = (Long) fila[1];
+            String mes = formatearMes(fila[0], fila[1]);
+            Long cantidad = (Long) fila[2];
             intercambiosPorMes.put(mes, cantidad);
         }
 
@@ -163,6 +164,12 @@ public class DashboardService {
 
 
         return dto;
+    }
+
+    private String formatearMes(Object anioValue, Object mesValue) {
+        int anio = ((Number) anioValue).intValue();
+        int mes = ((Number) mesValue).intValue();
+        return String.format("%04d-%02d", anio, mes);
     }
 
 
