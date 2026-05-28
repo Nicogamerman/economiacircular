@@ -135,3 +135,14 @@ databaseChangeLog:
         - sql: ALTER TABLE articulos DROP COLUMN marca;
         - sql: ALTER TABLE articulos DROP COLUMN subcategoria;
 
+  - changeSet:
+      id: 9-favoritos
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/09-favoritos.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS favoritos;
+

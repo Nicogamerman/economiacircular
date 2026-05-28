@@ -23,7 +23,8 @@ Documentación de los endpoints REST del backend, pensada para el consumo desde 
 10. [Talleres](#10-talleres)
 11. [Reportes y métricas](#11-reportes-y-métricas)
 12. [Dashboard de métricas (gráficos y mapas)](#12-dashboard-de-métricas-gráficos-y-mapas)
-13. [Health-check](#13-health-check)
+13. [Artículos favoritos](#13-artículos-favoritos)
+14. [Health-check](#14-health-check)
 
 ---
 
@@ -471,7 +472,62 @@ Centros de reciclaje con coordenadas. Misma estructura, `tipo` = `"CENTRO_RECICL
 
 ---
 
-## 13. Health-check
+## 13. Artículos favoritos
+
+Base path: `/api/favoritos` | Requieren JWT salvo donde se indica.
+
+### `POST /api/favoritos/{articuloId}` *(USER / ADMIN)*
+Agrega un artículo a los favoritos del usuario autenticado.
+
+**Respuesta 201:**
+```json
+{
+  "favoritoId": 7,
+  "guardadoEn": "2025-03-01T12:00:00",
+  "articulo": {
+    "id": 42,
+    "title": "Bicicleta de montaña",
+    "category": "DEPORTE",
+    "status": "DISPONIBLE",
+    ...
+  }
+}
+```
+
+### `DELETE /api/favoritos/{articuloId}` *(USER / ADMIN)*
+Quita un artículo de los favoritos del usuario autenticado.
+
+**Respuesta 200:** `"Artículo eliminado de favoritos"`
+
+### `GET /api/favoritos` *(USER / ADMIN)*
+Lista los artículos favoritos del usuario autenticado (paginado).
+
+| Param | Tipo | Default |
+|---|---|---|
+| `page` | int | 0 |
+| `size` | int | 10 |
+
+**Respuesta 200:** Page de `FavoritoResponseDto` (misma estructura que POST).
+
+### `GET /api/favoritos/{articuloId}/estado` *(USER / ADMIN)*
+Indica si el artículo está en los favoritos del usuario autenticado.
+
+**Respuesta 200:**
+```json
+{ "articuloId": 42, "esFavorito": true }
+```
+
+### `GET /api/favoritos/{articuloId}/count` *(público)*
+Devuelve cuántos usuarios tienen el artículo como favorito.
+
+**Respuesta 200:**
+```json
+{ "articuloId": 42, "total": 15 }
+```
+
+---
+
+## 14. Health-check
 
 ### `GET /ping`  *(público)*
 Devuelve `pong` para verificar que la API está viva.
