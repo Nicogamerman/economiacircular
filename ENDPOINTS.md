@@ -109,11 +109,77 @@ Endpoint de debug. **Body:** `{ "token": "..." }`. Devuelve las claims si es vá
 
 ## 2. Usuarios
 
-### `GET /api/usuarios/{id}`
-**Auth:** USER/ADMIN. Devuelve los datos del usuario.
+Base path: `/api/usuarios`
 
-### `PUT /api/usuarios/{id}`
-**Auth:** USER/ADMIN. Actualiza el perfil del usuario.
+### `GET /api/usuarios/perfil/{id}` *(público)*
+Devuelve el perfil público de un usuario. Incluye estadísticas de reputación y cantidad de artículos disponibles, pero **no** expone email ni domicilio.
+
+**Respuesta 200:**
+```json
+{
+  "id": 3,
+  "nombre": "Carlos",
+  "apellido": "López",
+  "rol": "USER",
+  "activo": true,
+  "tieneFoto": true,
+  "valoracionPromedio": 4.7,
+  "cantidadValoraciones": 15,
+  "articulosDisponibles": 4,
+  "creadoEn": "2024-09-01T10:00:00"
+}
+```
+
+### `GET /api/usuarios/me` *(USER / ADMIN)*
+Devuelve el perfil completo del usuario autenticado, incluyendo `email`, `domicilio` y `emailVerificado`.
+
+**Respuesta 200:** igual al perfil público más los campos privados.
+
+### `PUT /api/usuarios/me` *(USER / ADMIN)*
+Actualiza `nombre`, `apellido` y/o `domicilio` del usuario autenticado. Solo se actualizan los campos presentes en el body.
+
+**Body:**
+```json
+{
+  "nombre": "Carlos",
+  "apellido": "López",
+  "domicilio": "Av. Siempreviva 742"
+}
+```
+**Respuesta 200:** perfil completo actualizado (`UsuarioPerfilDto`).
+
+### `POST /api/usuarios/me/foto` *(USER / ADMIN)*
+Sube o reemplaza la foto de perfil del usuario autenticado.
+
+**Content-Type:** `multipart/form-data`  
+**Campo:** `foto` (archivo de imagen)  
+**Restricciones:** JPEG, PNG, WEBP o GIF · máximo **3 MB**
+
+**Respuesta 200:** `"Foto actualizada correctamente"`
+
+### `DELETE /api/usuarios/me/foto` *(USER / ADMIN)*
+Elimina la foto de perfil actual.
+
+**Respuesta 200:** `"Foto eliminada"`
+
+### `GET /api/usuarios/{id}/foto` *(público)*
+Devuelve la foto de perfil como bytes con `Content-Type: image/jpeg`.  
+Devuelve `404 Not Found` si el usuario no tiene foto.
+
+> **Tip frontend:** usar directamente como `src` de un `<img>`:  
+> `<img src="/api/usuarios/3/foto" />`
+
+---
+
+### Endpoints legacy (sin refactorizar)
+Los siguientes endpoints existen en el controller original y siguen funcionando, pero exponen la entidad directamente (incluye el hash de contraseña en la respuesta). Se recomienda usar los endpoints nuevos para el frontend:
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/usuarios` | Lista todos los usuarios |
+| `GET` | `/api/usuarios/{id}` | Usuario por ID |
+| `PUT` | `/api/usuarios/{id}` | Actualiza usuario por ID |
+| `DELETE` | `/api/usuarios/{id}` | Elimina usuario |
 
 ---
 
