@@ -169,3 +169,15 @@ databaseChangeLog:
       rollback:
         - sql: DROP TABLE IF EXISTS politicas;
 
+  - changeSet:
+      id: 12-seed-politicas
+      author: economia-circular
+      context: prod
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/12-seed-politicas.sql
+            splitStatements: true
+            stripComments: false
+      rollback:
+        - sql: DELETE FROM politicas WHERE tipo IN ('TERMINOS_USO','POLITICA_PRIVACIDAD','REGLAS_COMUNIDAD','FAQ');
+
