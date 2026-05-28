@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.GET, "/api/articles/*/images", "/api/articles/*/images/*/file").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/recycling-centers", "/api/recycling-centers/type/**", "/api/recycling-centers/nearby").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/valoraciones/usuario/**", "/api/valoraciones/articulo/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/politicas", "/api/politicas/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/favoritos/*/count").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")

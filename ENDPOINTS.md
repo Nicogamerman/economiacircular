@@ -26,7 +26,8 @@ Documentación de los endpoints REST del backend, pensada para el consumo desde 
 13. [Artículos favoritos](#13-artículos-favoritos)
 14. [Intercambios](#14-intercambios)
 15. [Chat de soporte](#15-chat-de-soporte)
-16. [Health-check](#16-health-check)
+16. [Políticas y reglas](#16-políticas-y-reglas)
+17. [Health-check](#17-health-check)
 
 ---
 
@@ -674,7 +675,69 @@ Marca como leídos los mensajes del chat que no fueron enviados por el usuario a
 
 ---
 
-## 16. Health-check
+## 16. Políticas y reglas
+
+Base path: `/api/politicas` | Los GETs son públicos; escritura requiere rol ADMIN.
+
+**Tipos disponibles:** `POLITICA_PRIVACIDAD`, `TERMINOS_USO`, `REGLAS_COMUNIDAD`, `FAQ`, `OTRO`
+
+### `GET /api/politicas` *(público)*
+Lista todas las políticas activas. Acepta filtro por tipo.
+
+| Param | Tipo | Descripción |
+|---|---|---|
+| `tipo` | string | Filtra por tipo (opcional) |
+
+**Respuesta 200:** Array de `PoliticaResponseDto`.
+
+### `GET /api/politicas/todas` *(solo ADMIN)*
+Lista todas las políticas (activas e inactivas), útil para el panel de administración.
+
+### `GET /api/politicas/{id}` *(público)*
+Obtiene el detalle de una política por ID.
+
+**Respuesta 200:**
+```json
+{
+  "id": 1,
+  "tipo": "TERMINOS_USO",
+  "titulo": "Términos y condiciones de uso",
+  "contenido": "...",
+  "activo": true,
+  "orden": 1,
+  "creadoEn": "2025-01-01T00:00:00",
+  "actualizadoEn": "2025-01-01T00:00:00"
+}
+```
+
+### `POST /api/politicas` *(solo ADMIN)*
+Crea una nueva política o regla.
+
+**Body:**
+```json
+{
+  "tipo": "REGLAS_COMUNIDAD",
+  "titulo": "Reglas de publicación",
+  "contenido": "Solo se permiten artículos en buen estado...",
+  "activo": true,
+  "orden": 2
+}
+```
+
+### `PUT /api/politicas/{id}` *(solo ADMIN)*
+Actualiza una política existente.
+
+### `DELETE /api/politicas/{id}` *(solo ADMIN)*
+Elimina permanentemente una política.
+
+### `PATCH /api/politicas/{id}/toggle` *(solo ADMIN)*
+Activa o desactiva una política sin eliminarla. Útil para publicar/despublicar temporalmente.
+
+**Respuesta 200:** `PoliticaResponseDto` con el nuevo valor de `activo`.
+
+---
+
+## 17. Health-check
 
 ### `GET /ping`  *(público)*
 Devuelve `pong` para verificar que la API está viva.

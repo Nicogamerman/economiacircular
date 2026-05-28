@@ -158,3 +158,14 @@ databaseChangeLog:
         - sql: DROP TABLE IF EXISTS mensajes_soporte;
         - sql: DROP TABLE IF EXISTS soporte_chats;
 
+  - changeSet:
+      id: 11-politicas
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/11-politicas.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS politicas;
+
