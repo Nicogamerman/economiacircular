@@ -1,14 +1,64 @@
 runtime: java11
 env: flex
 
-env_variables:
-  SPRING_PROFILES_ACTIVE: prod
-  SPRING_DATASOURCE_URL: jdbc:mysql://google/economia_circular?cloudSqlInstance=economia-circular-470222:us-central1:root&socketFactory=com.google.cloud.sql.mysql.SocketFactory
-  SPRING_DATASOURCE_USERNAME: user
-  SPRING_DATASOURCE_PASSWORD: devpass
+# ================================================================
+# RECURSOS DE LA INSTANCIA
+# Ajustar según carga real del proyecto (tesis = carga baja)
+# ================================================================
+resources:
+  cpu: 1
+  memory_gb: 1.0
+  disk_size_gb: 10
 
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 3
+  cool_down_period_sec: 120
+  cpu_utilization:
+    target_utilization: 0.7
+
+# ================================================================
+# VARIABLES DE ENTORNO
+# ⚠ Completar con los valores reales antes de hacer deploy
+# ⚠ NO commitear este archivo con valores reales (está en .gitignore)
+# ================================================================
+env_variables:
+
+  # --- Spring ---
+  SPRING_PROFILES_ACTIVE: "prod"
+
+  # --- Base de datos (Cloud SQL) ---
+  # Reemplazar TU_PROJECT_ID, TU_REGION y TU_INSTANCIA_SQL
+  SPRING_DATASOURCE_URL: "jdbc:mysql://google/economia_circular?cloudSqlInstance=TU_PROJECT_ID:TU_REGION:TU_INSTANCIA_SQL&socketFactory=com.google.cloud.sql.mysql.SocketFactory&useSSL=false&serverTimezone=UTC"
+  SPRING_DATASOURCE_USERNAME: "TU_USUARIO_DB"
+  SPRING_DATASOURCE_PASSWORD: "TU_PASSWORD_DB"
+
+  # --- Email SMTP ---
+  EMAIL_ENABLED: "true"
+  EMAIL_FROM: "no-reply@TU_DOMINIO.com"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_USERNAME: "TU_CUENTA@gmail.com"
+  # Usar una App Password de Google (no la contraseña de la cuenta):
+  # https://myaccount.google.com/apppasswords
+  SMTP_PASSWORD: "TU_APP_PASSWORD_GMAIL"
+
+  # --- URLs para emails transaccionales ---
+  # PASSWORD_RESET_URL_BASE: URL del frontend donde el usuario cambia la contraseña
+  PASSWORD_RESET_URL_BASE: "https://TU_FRONTEND.web.app/reset-password"
+  # EMAIL_VERIFY_URL_BASE: URL del backend que verifica el token
+  EMAIL_VERIFY_URL_BASE: "https://TU_PROJECT_ID.appspot.com/api/auth/verify-email"
+  EMAIL_VERIFICATION_REQUIRED: "true"
+
+  # --- Imágenes de artículos ---
+  ARTICLE_IMAGES_MAX: "5"
+  ARTICLE_IMAGES_MAX_SIZE_BYTES: "5242880"
+
+# ================================================================
+# CLOUD SQL: nombre de conexión (mismo valor que en la URL)
+# ================================================================
 beta_settings:
-  cloud_sql_instances: economia-circular-470222:us-central1:root
+  cloud_sql_instances: "TU_PROJECT_ID:TU_REGION:TU_INSTANCIA_SQL"
 
 handlers:
   - url: /.*
