@@ -157,8 +157,16 @@ public class ArticleService {
         Articulo articulo = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
 
-        if (!articulo.getUsuario().getId().equals(currentUser.getId())) {
+        boolean esAdmin = currentUser.getRol() != null && currentUser.getRol().contains("ADMIN");
+        if (!esAdmin && !articulo.getUsuario().getId().equals(currentUser.getId())) {
             throw new RuntimeException("No tienes permisos para editar este artículo");
+        }
+
+        if (!esAdmin && updateDto.getEstado() != null) {
+            if (updateDto.getEstado() == Articulo.EstadoArticulo.INTERCAMBIADO
+                    || updateDto.getEstado() == Articulo.EstadoArticulo.RESERVADO) {
+                throw new RuntimeException("El estado " + updateDto.getEstado() + " no puede asignarse manualmente");
+            }
         }
 
         articulo.setTitulo(updateDto.getTitle());

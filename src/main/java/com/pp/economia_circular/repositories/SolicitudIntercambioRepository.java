@@ -35,4 +35,7 @@ public interface SolicitudIntercambioRepository extends JpaRepository<SolicitudI
     @Query("UPDATE SolicitudIntercambio s SET s.estado = 'RECHAZADO' WHERE s.articuloSolicitado.id = :articuloId AND s.id <> :exceptoId AND s.estado = 'PENDIENTE'")
     int rechazarPendientesPorArticulo(@Param("articuloId") Long articuloId,
                                       @Param("exceptoId") Long exceptoId);
+
+    @Query("SELECT COUNT(s) > 0 FROM SolicitudIntercambio s WHERE s.estado = 'COMPLETADO' AND ((s.solicitante.id = :aId AND s.articuloSolicitado.usuario.id = :bId) OR (s.solicitante.id = :bId AND s.articuloSolicitado.usuario.id = :aId))")
+    boolean existeIntercambioCompletado(@Param("aId") Long aId, @Param("bId") Long bId);
 }

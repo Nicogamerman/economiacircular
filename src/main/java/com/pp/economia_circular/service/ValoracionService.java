@@ -8,6 +8,7 @@ import com.pp.economia_circular.entity.Notificacion;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.entity.Valoracion;
 import com.pp.economia_circular.repositories.ArticleRepository;
+import com.pp.economia_circular.repositories.SolicitudIntercambioRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.repositories.ValoracionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class ValoracionService {
     @Autowired
     private JWTService authService;
 
+    @Autowired
+    private SolicitudIntercambioRepository solicitudRepository;
+
     @Autowired(required = false)
     private NotificacionService notificacionService;
 
@@ -48,6 +52,10 @@ public class ValoracionService {
 
         Usuario valorado = usuarioRepository.findById(dto.getValoradoId())
                 .orElseThrow(() -> new RuntimeException("Usuario a valorar no encontrado"));
+
+        if (!solicitudRepository.existeIntercambioCompletado(valorador.getId(), dto.getValoradoId())) {
+            throw new RuntimeException("Solo podés valorar a usuarios con los que completaste un intercambio");
+        }
 
         Articulo articulo = null;
         if (dto.getArticuloId() != null) {
@@ -112,7 +120,7 @@ public class ValoracionService {
         Valoracion valoracion = valoracionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Valoración no encontrada"));
 
-        boolean esAdmin = "ADMIN".equalsIgnoreCase(actual.getRol());
+        boolean esAdmin = actual.getRol() != null && actual.getRol().contains("ADMIN");
         if (!esAdmin && !valoracion.getValorador().getId().equals(actual.getId())) {
             throw new RuntimeException("No puedes eliminar una valoración que no es tuya");
         }

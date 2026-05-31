@@ -54,8 +54,7 @@ public class ArticleController {
                     .collect(Collectors.toList());
 
             if (articulos.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                        .body("No se encontraron artículos activos para el usuario con email: " + email);
+                return ResponseEntity.ok(java.util.Collections.emptyList());
             }
 
             List<ArticleUserDto> articulosDto = articulos.stream()

@@ -84,7 +84,29 @@ public class MensajeService {
 
     // 🧵 Obtener mensajes por artículo
     public List<Mensaje> obtenerMensajesPorArticulo(Long articuloId) {
-        return mensajeRepository.findByArticulo_Id(articuloId);
+        Usuario currentUser = authService.getCurrentUser();
+        if (currentUser == null) throw new RuntimeException("Usuario no autenticado");
+
+        Articulo articulo = articleRepository.findById(articuloId)
+                .orElseThrow(() -> new RuntimeException("Artículo no encontrado"));
+
+        boolean esAdmin = currentUser.getRol() != null && currentUser.getRol().contains("ADMIN");
+        boolean esPropietario = articulo.getUsuario().getId().equals(currentUser.getId());
+
+        List<Mensaje> mensajes = mensajeRepository.findByArticulo_Id(articuloId);
+
+        if (!esAdmin && !esPropietario) {
+            List<Mensaje> propios = mensajes.stream()
+                    .filter(m -> m.getRemitente().getId().equals(currentUser.getId())
+                              || m.getDestinatario().getId().equals(currentUser.getId()))
+                    .collect(java.util.stream.Collectors.toList());
+            if (propios.isEmpty()) {
+                throw new RuntimeException("No tenés permiso para ver estos mensajes");
+            }
+            return propios;
+        }
+
+        return mensajes;
     }
 
     // ✅ Marcar mensaje como leído
