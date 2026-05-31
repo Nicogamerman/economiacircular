@@ -78,9 +78,8 @@ public class ArticleStatusController {
             );
 
         } catch (Exception e) {
-            e.printStackTrace(); // muestra el error exacto en consola
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al actualizar estado: " + e.toString());
+                    .body("Error al actualizar estado: " + e.getMessage());
         }
 
     }

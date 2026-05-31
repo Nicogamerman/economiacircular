@@ -12,6 +12,7 @@ public class SoporteChatCreateDto {
     private String asunto;
 
     @NotBlank(message = "El mensaje inicial es obligatorio")
+    @Size(max = 2000, message = "El mensaje inicial no puede superar 2000 caracteres")
     private String mensajeInicial;
 
     private SoporteChat.PrioridadChat prioridad = SoporteChat.PrioridadChat.MEDIA;

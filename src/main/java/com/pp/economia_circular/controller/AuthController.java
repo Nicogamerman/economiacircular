@@ -57,45 +57,19 @@ public class AuthController {
                         .body("Contraseña es requerida");
             }
             
-            System.out.println("=== DEBUG LOGIN ===");
-            System.out.println("Email: [" + request.getEmail() + "]");
-            System.out.println("Pass recibida: [" + request.getContrasena() + "]");
-            
             Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(request.getEmail());
- 
+
             if (usuarioOpt.isPresent()) {
                 Usuario usuario = usuarioOpt.get();
-                
-                System.out.println("Usuario encontrado: " + usuario.getEmail());
-                System.out.println("Activo: " + usuario.isActivo());
-                System.out.println("Pass en BD: [" + usuario.getContrasena() + "]");
-                System.out.println("¿Es BCrypt?: " + usuario.getContrasena().startsWith("$2"));
-                
-                // Verificar si el usuario está activo
+
                 if (!usuario.isActivo()) {
-                    System.out.println("Usuario INACTIVO");
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body("Usuario inactivo");
                 }
-                
-                // Verificar contraseña (tanto texto plano como encriptada)
-                boolean passwordMatches = false;
-                boolean plainMatch = usuario.getContrasena().equals(request.getContrasena());
-                boolean bcryptMatch = passwordEncoder.matches(request.getContrasena(), usuario.getContrasena());
-                
-                System.out.println("Plain match: " + plainMatch);
-                System.out.println("BCrypt match: " + bcryptMatch);
-                
-                if (plainMatch) {
-                    // Contraseña en texto plano (para usuarios existentes)
-                    passwordMatches = true;
-                } else if (bcryptMatch) {
-                    // Contraseña encriptada
-                    passwordMatches = true;
-                }
-                
-                System.out.println("Match final: " + passwordMatches);
-                System.out.println("==================");
+
+                boolean passwordMatches =
+                        usuario.getContrasena().equals(request.getContrasena()) ||
+                        passwordEncoder.matches(request.getContrasena(), usuario.getContrasena());
                 
                 if (passwordMatches) {
                     if (emailVerificationRequired && !usuario.isEmailVerificado()) {
@@ -183,12 +157,6 @@ public class AuthController {
             usuario.setActualizadoEn(java.time.LocalDateTime.now());
             usuarioRepo.save(usuario);
 
-            System.out.println("=== PASSWORD RESET ===");
-            System.out.println("Email: " + email);
-            System.out.println("Nueva contraseña establecida exitosamente");
-            System.out.println("=====================");
-
-            // En producción, aquí enviarías un email de confirmación
             return ResponseEntity.ok("Contraseña actualizada exitosamente");
 
         } catch (Exception e) {
@@ -220,8 +188,7 @@ public class AuthController {
             if (emailVerificationService != null) {
                 emailVerificationService.reenviar(request.getEmail());
             }
-        } catch (Exception e) {
-            System.err.println("Error procesando resend-verification: " + e.getMessage());
+        } catch (Exception ignored) {
         }
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Si el email está registrado y aún no fue verificado, recibirás un nuevo enlace.");
@@ -232,8 +199,7 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
             passwordResetService.solicitarRecuperacion(request.getEmail());
-        } catch (Exception e) {
-            System.err.println("Error procesando forgot-password: " + e.getMessage());
+        } catch (Exception ignored) {
         }
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.");

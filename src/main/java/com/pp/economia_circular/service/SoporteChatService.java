@@ -10,6 +10,7 @@ import com.pp.economia_circular.entity.SoporteChat;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.MensajeSoporteRepository;
 import com.pp.economia_circular.repositories.SoporteChatRepository;
+import com.pp.economia_circular.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,9 @@ public class SoporteChatService {
 
     @Autowired
     private MensajeSoporteRepository mensajeRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @Autowired
     private JWTService authService;
@@ -69,16 +73,27 @@ public class SoporteChatService {
         }
 
         if (notificacionService != null) {
-            Usuario destinatario = esAdmin ? chat.getUsuario() : null;
-            if (destinatario != null) {
+            if (esAdmin) {
                 notificacionService.crear(
-                        destinatario,
+                        chat.getUsuario(),
                         emisor,
                         Notificacion.TipoNotificacion.MENSAJE_NUEVO,
                         "Nueva respuesta de soporte",
                         "Tienes una nueva respuesta en tu chat: " + chat.getAsunto(),
                         Notificacion.ReferenciaTipo.MENSAJE,
                         saved.getId()
+                );
+            } else {
+                usuarioRepository.findByRolContaining("ADMIN").forEach(admin ->
+                        notificacionService.crear(
+                                admin,
+                                emisor,
+                                Notificacion.TipoNotificacion.MENSAJE_NUEVO,
+                                "Nuevo mensaje de soporte",
+                                emisor.getNombre() + " escribió en: " + chat.getAsunto(),
+                                Notificacion.ReferenciaTipo.MENSAJE,
+                                saved.getId()
+                        )
                 );
             }
         }
