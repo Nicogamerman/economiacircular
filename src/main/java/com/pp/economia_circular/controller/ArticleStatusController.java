@@ -2,7 +2,9 @@ package com.pp.economia_circular.controller;
 
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.repositories.ArticleRepository;
+import com.pp.economia_circular.service.JWTService;
 import com.pp.economia_circular.service.ReportService;
+import com.pp.economia_circular.entity.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +25,14 @@ public class ArticleStatusController {
     @Autowired
     private ReportService reportService;
 
+    @Autowired
+    private JWTService authService;
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> updateArticleStatus(
             @PathVariable Long id,
             @RequestBody(required = true) EstadoRequest estadoRequest) {
-            System.out.println(">>> Body recibido: " + estadoRequest);
 
         try {
             Optional<Articulo> optionalArticulo = articleRepository.findById(id);
@@ -38,6 +42,17 @@ public class ArticleStatusController {
             }
 
             Articulo articulo = optionalArticulo.get();
+
+            Usuario currentUser = authService.getCurrentUser();
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado");
+            }
+            boolean esAdmin = currentUser.getRol() != null && currentUser.getRol().contains("ADMIN");
+            if (!esAdmin && !articulo.getUsuario().getId().equals(currentUser.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("No tenés permiso para modificar este artículo");
+            }
+
             String nuevoEstado = estadoRequest.getNuevoEstado().toUpperCase();
 
             // Validar estados permitidos

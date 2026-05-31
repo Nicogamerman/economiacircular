@@ -70,6 +70,15 @@ public class MensajeService {
 
     // 💬 Obtener conversación entre dos usuarios
     public List<Mensaje> obtenerConversacion(Long usuarioId1, Long usuarioId2) {
+        Usuario currentUser = authService.getCurrentUser();
+        if (currentUser == null) throw new RuntimeException("Usuario no autenticado");
+
+        boolean esAdmin = currentUser.getRol() != null && currentUser.getRol().contains("ADMIN");
+        boolean esParticipante = currentUser.getId().equals(usuarioId1) || currentUser.getId().equals(usuarioId2);
+        if (!esAdmin && !esParticipante) {
+            throw new RuntimeException("No tenés permiso para ver esta conversación");
+        }
+
         return mensajeRepository.findConversationBetweenUsers(usuarioId1, usuarioId2);
     }
 
@@ -80,8 +89,15 @@ public class MensajeService {
 
     // ✅ Marcar mensaje como leído
     public Mensaje marcarComoLeido(Long mensajeId) {
+        Usuario currentUser = authService.getCurrentUser();
+        if (currentUser == null) throw new RuntimeException("Usuario no autenticado");
+
         Mensaje mensaje = mensajeRepository.findById(mensajeId)
                 .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+
+        if (!mensaje.getDestinatario().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("No podés marcar como leído un mensaje que no es tuyo");
+        }
 
         mensaje.setEstado(Mensaje.EstadoMensaje.LEIDO);
         mensaje.setLeidoEn(LocalDateTime.now());
