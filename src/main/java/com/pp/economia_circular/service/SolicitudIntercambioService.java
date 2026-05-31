@@ -132,6 +132,20 @@ public class SolicitudIntercambioService {
         solicitud.setEstado(nuevoEstado);
         SolicitudIntercambio updated = solicitudRepository.save(solicitud);
 
+        if (nuevoEstado == SolicitudIntercambio.EstadoIntercambio.ACEPTADO) {
+            solicitudRepository.rechazarPendientesPorArticulo(
+                    solicitud.getArticuloSolicitado().getId(), solicitud.getId());
+        }
+
+        if (nuevoEstado == SolicitudIntercambio.EstadoIntercambio.COMPLETADO) {
+            Articulo solicitado = solicitud.getArticuloSolicitado();
+            Articulo ofrecido = solicitud.getArticuloOfrecido();
+            solicitado.setEstado(Articulo.EstadoArticulo.INTERCAMBIADO);
+            ofrecido.setEstado(Articulo.EstadoArticulo.INTERCAMBIADO);
+            articleRepository.save(solicitado);
+            articleRepository.save(ofrecido);
+        }
+
         if (notificacionService != null) {
             Usuario destinatario = esSolicitante
                     ? solicitud.getArticuloSolicitado().getUsuario()

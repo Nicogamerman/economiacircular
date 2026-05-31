@@ -152,11 +152,32 @@ class SolicitudIntercambioServiceTest {
         when(authService.getCurrentUser()).thenReturn(propietario);
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitud));
         when(solicitudRepository.save(any())).thenReturn(solicitud);
+        when(solicitudRepository.rechazarPendientesPorArticulo(10L, 1L)).thenReturn(0);
 
         SolicitudResponseDto result = solicitudService.cambiarEstado(1L, dto);
 
         assertNotNull(result);
         verify(solicitudRepository).save(any());
+        verify(solicitudRepository).rechazarPendientesPorArticulo(10L, 1L);
+    }
+
+    @Test
+    void cambiarEstado_Completar_MarcaArticulosIntercambiados() {
+        solicitud.setEstado(SolicitudIntercambio.EstadoIntercambio.ACEPTADO);
+        CambiarEstadoSolicitudDto dto = new CambiarEstadoSolicitudDto();
+        dto.setNuevoEstado(SolicitudIntercambio.EstadoIntercambio.COMPLETADO);
+
+        when(authService.getCurrentUser()).thenReturn(propietario);
+        when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitud));
+        when(solicitudRepository.save(any())).thenReturn(solicitud);
+        when(articleRepository.save(articuloSolicitado)).thenReturn(articuloSolicitado);
+        when(articleRepository.save(articuloOfrecido)).thenReturn(articuloOfrecido);
+
+        solicitudService.cambiarEstado(1L, dto);
+
+        assertEquals(Articulo.EstadoArticulo.INTERCAMBIADO, articuloSolicitado.getEstado());
+        assertEquals(Articulo.EstadoArticulo.INTERCAMBIADO, articuloOfrecido.getEstado());
+        verify(articleRepository, times(2)).save(any(Articulo.class));
     }
 
     @Test

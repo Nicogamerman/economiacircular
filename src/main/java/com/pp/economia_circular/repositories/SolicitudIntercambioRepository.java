@@ -4,6 +4,7 @@ import com.pp.economia_circular.entity.SolicitudIntercambio;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -29,4 +30,9 @@ public interface SolicitudIntercambioRepository extends JpaRepository<SolicitudI
     boolean existeSolicitudPendiente(@Param("solicitanteId") Long solicitanteId,
                                      @Param("articuloSolicitadoId") Long articuloSolicitadoId,
                                      @Param("articuloOfrecidoId") Long articuloOfrecidoId);
+
+    @Modifying
+    @Query("UPDATE SolicitudIntercambio s SET s.estado = 'RECHAZADO' WHERE s.articuloSolicitado.id = :articuloId AND s.id <> :exceptoId AND s.estado = 'PENDIENTE'")
+    int rechazarPendientesPorArticulo(@Param("articuloId") Long articuloId,
+                                      @Param("exceptoId") Long exceptoId);
 }

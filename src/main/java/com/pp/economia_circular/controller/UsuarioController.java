@@ -6,9 +6,11 @@ import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +28,8 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     // --- Perfil público ---
 
     @GetMapping("/perfil/{id}")
@@ -33,7 +37,7 @@ public class UsuarioController {
         try {
             return ResponseEntity.ok(usuarioService.obtenerPerfilPublico(id));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -94,39 +98,45 @@ public class UsuarioController {
             return ResponseEntity.notFound().build();
         }
     }
- 
-    // GET: listar todos los usuarios
+
+    // --- CRUD admin ---
+
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<Usuario> listarUsuarios() {
-        return usuarioRepository.findAll(); // <- esto ya trae todos si el repository no filtra por "activo"
+        return usuarioRepository.findAll();
     }
 
-    // GET: usuario por id
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Usuario> obtenerUsuario(@PathVariable Long id) {
         return usuarioRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST: crear nuevo usuario.
     @PostMapping
-    public void crearUsuario(@RequestBody Usuario usuario) {
-         usuarioRepository.save(usuario);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Usuario> crearUsuario(@RequestBody Usuario usuario) {
+        if (usuario.getContrasena() != null && !usuario.getContrasena().isBlank()) {
+            usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioRepository.save(usuario));
     }
 
-    // PUT: modificar usuario
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario datosActualizados) {
         return usuarioRepository.findById(id)
                 .map(usuario -> {
                     usuario.setNombre(datosActualizados.getNombre());
                     usuario.setApellido(datosActualizados.getApellido());
                     usuario.setEmail(datosActualizados.getEmail());
-                    usuario.setContrasena(datosActualizados.getContrasena());
+                    if (datosActualizados.getContrasena() != null && !datosActualizados.getContrasena().isBlank()) {
+                        usuario.setContrasena(passwordEncoder.encode(datosActualizados.getContrasena()));
+                    }
                     usuario.setRol(datosActualizados.getRol());
                     usuario.setDomicilio(datosActualizados.getDomicilio());
-                    usuario.setFoto(datosActualizados.getFoto());
                     usuario.setActivo(datosActualizados.isActivo());
                     usuario.setActualizadoEn(java.time.LocalDateTime.now());
                     return ResponseEntity.ok(usuarioRepository.save(usuario));
@@ -134,10 +144,9 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE: eliminar usuario
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> eliminarUsuario(@PathVariable Long id) {
-
         return usuarioRepository.findById(id)
                 .map(usuario -> {
                     usuarioRepository.delete(usuario);
@@ -145,5 +154,4 @@ public class UsuarioController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
-
 }
