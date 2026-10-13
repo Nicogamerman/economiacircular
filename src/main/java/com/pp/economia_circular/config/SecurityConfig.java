@@ -47,11 +47,17 @@ public class SecurityConfig {
                         .antMatchers("/api/auth/link-google").authenticated()
                         .antMatchers("/api/auth/**", "/api/registro/**", "/api/registrar/**", "/ping").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/events", "/api/events/upcoming", "/api/events/type/**", "/api/events/nearby").permitAll()
-                        .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**", 
-                                     "/api/articles/most-viewed", "/api/articles/user/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**",
+                                     "/api/articles/most-viewed", "/api/articles/user/**",
+                                     "/api/articles/subcategories", "/api/articles/brands", "/api/articles/tags").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles/{id}").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/oferentes/*/valoraciones").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles/*/images", "/api/articles/*/images/*/file").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/recycling-centers", "/api/recycling-centers/type/**", "/api/recycling-centers/nearby").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/valoraciones/usuario/**", "/api/valoraciones/articulo/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/politicas", "/api/politicas/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/favoritos/*/count").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/usuarios/perfil/**", "/api/usuarios/*/foto").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")

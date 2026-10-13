@@ -37,6 +37,13 @@ public class Usuario {
     private byte[] foto;
 
     private boolean activo = true;
+
+    @Column(name = "email_verificado")
+    private boolean emailVerificado = false;
+
+    @Column(name = "email_verificado_en")
+    private LocalDateTime emailVerificadoEn;
+
     @Column(name = "creado_en")
     private LocalDateTime creadoEn;
     @Column(name = "actualizado_en")

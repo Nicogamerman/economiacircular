@@ -2,18 +2,24 @@ package com.pp.economia_circular.controller;
 
 import com.pp.economia_circular.DTO.AuthRequest;
 import com.pp.economia_circular.DTO.AuthResponse;
+import com.pp.economia_circular.DTO.ConfirmResetPasswordRequest;
+import com.pp.economia_circular.DTO.ForgotPasswordRequest;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
+import com.pp.economia_circular.service.EmailVerificationService;
 import com.pp.economia_circular.service.GoogleAuthService;
 import com.pp.economia_circular.service.JWTService;
-import com.pp.economia_circular.service.PasswordRecoveryService;
+import com.pp.economia_circular.service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,10 +37,16 @@ public class AuthController {
     private JWTService jwtService;
 
     @Autowired
-    private PasswordRecoveryService passwordRecoveryService;
+    private PasswordResetService passwordResetService;
 
     @Autowired
     private GoogleAuthService googleAuthService;
+
+    @Autowired(required = false)
+    private EmailVerificationService emailVerificationService;
+
+    @Value("${app.email-verification.required:false}")
+    private boolean emailVerificationRequired;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -53,12 +65,8 @@ public class AuthController {
                         .body("Contraseña es requerida");
             }
             
-            System.out.println("=== DEBUG LOGIN ===");
-            System.out.println("Email: [" + request.getEmail() + "]");
-            System.out.println("Pass recibida: [" + request.getContrasena() + "]");
-            
             Optional<Usuario> usuarioOpt = usuarioRepo.findByEmail(request.getEmail());
- 
+
             if (usuarioOpt.isPresent()) {
                 Usuario usuario = usuarioOpt.get();
                 // Verificar si el usuario está activo
@@ -71,30 +79,19 @@ public class AuthController {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body("Esta cuenta usa inicio de sesión con Google. Usa el botón \"Iniciar con Google\".");
                 }
-                System.out.println("Usuario encontrado: " + usuario.getEmail());
-                System.out.println("Activo: " + usuario.isActivo());
-                System.out.println("Pass en BD: [" + usuario.getContrasena() + "]");
-                System.out.println("¿Es BCrypt?: " + usuario.getContrasena().startsWith("$2"));
-                // Verificar contraseña (tanto texto plano como encriptada)
-                boolean passwordMatches = false;
-                boolean plainMatch = request.getContrasena().equals(usuario.getContrasena());
-                boolean bcryptMatch = passwordEncoder.matches(request.getContrasena(), usuario.getContrasena());
-                
-                System.out.println("Plain match: " + plainMatch);
-                System.out.println("BCrypt match: " + bcryptMatch);
-                
-                if (plainMatch) {
-                    // Contraseña en texto plano (para usuarios existentes)
-                    passwordMatches = true;
-                } else if (bcryptMatch) {
-                    // Contraseña encriptada
-                    passwordMatches = true;
-                }
-                
-                System.out.println("Match final: " + passwordMatches);
-                System.out.println("==================");
+
+                // Acepta contraseñas en texto plano (usuarios viejos) o BCrypt
+                boolean passwordMatches =
+                        usuario.getContrasena().equals(request.getContrasena()) ||
+                        passwordEncoder.matches(request.getContrasena(), usuario.getContrasena());
                 
                 if (passwordMatches) {
+                    if (emailVerificationRequired && !usuario.isEmailVerificado()) {
+                        Map<String, Object> body = new HashMap<>();
+                        body.put("message", "Email no verificado. Revisá tu casilla o solicitá un nuevo enlace.");
+                        body.put("emailVerificado", false);
+                        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+                    }
                     // Generar token con el rol del usuario
                     String token = jwtService.generarToken(usuario.getEmail(), usuario.getRol());
                     AuthResponse response = AuthResponse.builder()
@@ -111,23 +108,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error interno del servidor: " + e.getMessage());
         }
-    }
-
-    /**
-     * Solicitar recuperación de contraseña (olvidé mi contraseña).
-     * Se envía un email con un enlace de un solo uso y expiración (ej. 1 hora).
-     * POST /api/auth/forgot-password
-     * Body: { "email": "usuario@ejemplo.com" }
-     */
-    @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
-        String email = request != null ? request.get("email") : null;
-        if (email == null || email.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Email es requerido");
-        }
-        passwordRecoveryService.solicitarRecuperacion(email.trim());
-        // Siempre mismo mensaje por seguridad (no revelar si el email existe)
-        return ResponseEntity.ok("Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.");
     }
 
     /**
@@ -155,8 +135,10 @@ public class AuthController {
         if (newPassword.length() < 6) {
             return ResponseEntity.badRequest().body("La contraseña debe tener al menos 6 caracteres");
         }
-        boolean ok = passwordRecoveryService.restablecerConToken(tokenValue.trim(), newPassword);
-        if (!ok) {
+        // Alias de /confirm-reset-password (se mantiene por compatibilidad)
+        try {
+            passwordResetService.confirmarCambioPassword(tokenValue.trim(), newPassword);
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Token inválido o expirado. Solicita de nuevo el enlace de recuperación.");
         }
@@ -326,17 +308,71 @@ public class AuthController {
             usuario.setActualizadoEn(java.time.LocalDateTime.now());
             usuarioRepo.save(usuario);
 
-            System.out.println("=== PASSWORD RESET ===");
-            System.out.println("Email: " + email);
-            System.out.println("Nueva contraseña establecida exitosamente");
-            System.out.println("=====================");
-
-            // En producción, aquí enviarías un email de confirmación
             return ResponseEntity.ok("Contraseña actualizada exitosamente");
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al resetear contraseña: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        try {
+            if (emailVerificationService == null) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("Verificación de email no disponible");
+            }
+            emailVerificationService.verificar(token);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Email verificado correctamente");
+            response.put("verified", true);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            if (emailVerificationService != null) {
+                emailVerificationService.reenviar(request.getEmail());
+            }
+        } catch (Exception ignored) {
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Si el email está registrado y aún no fue verificado, recibirás un nuevo enlace.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            passwordResetService.solicitarRecuperacion(request.getEmail());
+        } catch (Exception ignored) {
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam String token) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", passwordResetService.validarToken(token));
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/confirm-reset-password")
+    public ResponseEntity<?> confirmResetPassword(@Valid @RequestBody ConfirmResetPasswordRequest request) {
+        try {
+            passwordResetService.confirmarCambioPassword(request.getToken(), request.getNewPassword());
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Contraseña actualizada exitosamente");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

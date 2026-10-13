@@ -5,6 +5,7 @@ import com.pp.economia_circular.DTO.RespuestaMensajeDto;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.entity.Mensaje;
+import com.pp.economia_circular.entity.Notificacion;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import com.pp.economia_circular.repositories.MensajeRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
@@ -28,7 +29,10 @@ public class ServicioMensaje {
     
     @Autowired
     private UsuarioRepository usuarioRepository;
-    
+
+    @Autowired(required = false)
+    private NotificacionService notificacionService;
+
     public RespuestaMensajeDto enviarMensaje(CrearMensajeDto crearDto, Long remitenteId) {
         Usuario remitente = usuarioRepository.findById(remitenteId)
                 .orElseThrow(() -> new RuntimeException("Usuario emisor no encontrado"));
@@ -56,6 +60,26 @@ public class ServicioMensaje {
         mensaje.setArticulo(articulo);
         
         Mensaje mensajeGuardado = mensajeRepository.save(mensaje);
+
+        if (notificacionService != null && destinatario != null) {
+            String tituloArticulo = articulo != null && articulo.getTitulo() != null
+                    ? articulo.getTitulo()
+                    : "un artículo";
+            String contenido = crearDto.getContenido();
+            String resumen = contenido != null && contenido.length() > 120
+                    ? contenido.substring(0, 117) + "..."
+                    : contenido;
+            notificacionService.crear(
+                    destinatario,
+                    remitente,
+                    Notificacion.TipoNotificacion.MENSAJE_NUEVO,
+                    "Nuevo mensaje sobre \"" + tituloArticulo + "\"",
+                    resumen,
+                    Notificacion.ReferenciaTipo.MENSAJE,
+                    mensajeGuardado.getId()
+            );
+        }
+
         return convertirARespuestaDto(mensajeGuardado);
     }
     

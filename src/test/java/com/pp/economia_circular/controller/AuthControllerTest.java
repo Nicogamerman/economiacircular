@@ -9,9 +9,10 @@ import com.pp.economia_circular.repositories.MensajeRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.ArticleService;
 import com.pp.economia_circular.service.EventService;
+import com.pp.economia_circular.service.EmailVerificationService;
 import com.pp.economia_circular.service.GoogleAuthService;
 import com.pp.economia_circular.service.JWTService;
-import com.pp.economia_circular.service.PasswordRecoveryService;
+import com.pp.economia_circular.service.PasswordResetService;
 import com.pp.economia_circular.service.RecyclingCenterService;
 import com.pp.economia_circular.service.ReportService;
 import com.pp.economia_circular.service.ServicioMensaje;
@@ -61,10 +62,13 @@ class AuthControllerTest {
     private JWTService jwtService;
 
     @MockBean
-    private PasswordRecoveryService passwordRecoveryService;
+    private PasswordResetService passwordResetService;
 
     @MockBean
     private GoogleAuthService googleAuthService;
+
+    @MockBean
+    private EmailVerificationService emailVerificationService;
 
     @MockBean
     private ArticleService articleService;
@@ -934,16 +938,16 @@ class AuthControllerTest {
     @DisplayName("Forgot password con email válido devuelve mensaje genérico")
     void testForgotPasswordExitoso() throws Exception {
         String requestBody = String.format("{\"email\":\"%s\"}", TEST_EMAIL);
-        doNothing().when(passwordRecoveryService).solicitarRecuperacion(TEST_EMAIL);
+        doNothing().when(passwordResetService).solicitarRecuperacion(TEST_EMAIL);
 
         mockMvc.perform(post("/api/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Si el correo está registrado")));
+                .andExpect(jsonPath("$.message").value(containsString("Si el email está registrado")));
 
-        verify(passwordRecoveryService, times(1)).solicitarRecuperacion(TEST_EMAIL);
+        verify(passwordResetService, times(1)).solicitarRecuperacion(TEST_EMAIL);
     }
 
     @Test
@@ -953,10 +957,9 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andDo(print())
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Email es requerido"));
+                .andExpect(status().isBadRequest());
 
-        verify(passwordRecoveryService, never()).solicitarRecuperacion(anyString());
+        verify(passwordResetService, never()).solicitarRecuperacion(anyString());
     }
 
     @Test
@@ -966,8 +969,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"\"}"))
                 .andDo(print())
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("Email es requerido"));
+                .andExpect(status().isBadRequest());
     }
 
     // ==================== TESTS PARA RESET PASSWORD WITH TOKEN ====================
@@ -979,7 +981,7 @@ class AuthControllerTest {
         String newPassword = "NuevaPass123!";
         String requestBody = String.format("{\"token\":\"%s\",\"newPassword\":\"%s\"}", token, newPassword);
 
-        when(passwordRecoveryService.restablecerConToken(token, newPassword)).thenReturn(true);
+        doNothing().when(passwordResetService).confirmarCambioPassword(token, newPassword);
 
         mockMvc.perform(post("/api/auth/reset-password-with-token")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -988,7 +990,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Contraseña actualizada")));
 
-        verify(passwordRecoveryService, times(1)).restablecerConToken(token, newPassword);
+        verify(passwordResetService, times(1)).confirmarCambioPassword(token, newPassword);
     }
 
     @Test
@@ -996,7 +998,8 @@ class AuthControllerTest {
     void testResetPasswordWithTokenInvalido() throws Exception {
         String requestBody = "{\"token\":\"tokenExpirado\",\"newPassword\":\"NuevaPass123!\"}";
 
-        when(passwordRecoveryService.restablecerConToken("tokenExpirado", "NuevaPass123!")).thenReturn(false);
+        doThrow(new RuntimeException("Token inválido o expirado"))
+                .when(passwordResetService).confirmarCambioPassword("tokenExpirado", "NuevaPass123!");
 
         mockMvc.perform(post("/api/auth/reset-password-with-token")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1016,7 +1019,7 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Token es requerido"));
 
-        verify(passwordRecoveryService, never()).restablecerConToken(anyString(), anyString());
+        verify(passwordResetService, never()).confirmarCambioPassword(anyString(), anyString());
     }
 
     @Test

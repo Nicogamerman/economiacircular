@@ -5,6 +5,7 @@ import com.pp.economia_circular.entity.Articulo;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.List;
 
 public class ArticleCreateDto {
 
@@ -19,11 +20,22 @@ public class ArticleCreateDto {
     @NotNull(message = "La categoría es obligatoria")
     private Articulo.CategoriaArticulo category;
 
+    @Size(max = 100)
+    private String subcategoria;
+
+    @Size(max = 100)
+    private String marca;
+
+    @Size(max = 100)
+    private String modelo;
+
     @NotNull(message = "La condición es obligatoria")
     private Articulo.CondicionArticulo condition;
 
     // Nuevo campo
     private Articulo.EstadoArticulo estado;
+
+    private List<String> etiquetas;
 
     public ArticleCreateDto() {}
 
@@ -50,4 +62,16 @@ public class ArticleCreateDto {
 
     public Articulo.EstadoArticulo getEstado() { return estado; }
     public void setEstado(Articulo.EstadoArticulo estado) { this.estado = estado; }
+
+    public String getSubcategoria() { return subcategoria; }
+    public void setSubcategoria(String subcategoria) { this.subcategoria = subcategoria; }
+
+    public String getMarca() { return marca; }
+    public void setMarca(String marca) { this.marca = marca; }
+
+    public String getModelo() { return modelo; }
+    public void setModelo(String modelo) { this.modelo = modelo; }
+
+    public List<String> getEtiquetas() { return etiquetas; }
+    public void setEtiquetas(List<String> etiquetas) { this.etiquetas = etiquetas; }
 }

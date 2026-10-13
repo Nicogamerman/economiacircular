@@ -1,17 +1,22 @@
 package com.pp.economia_circular.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "notificaciones")
+@Table(name = "notificaciones",
+        indexes = {
+                @Index(name = "idx_notificaciones_destinatario", columnList = "destinatario_id"),
+                @Index(name = "idx_notificaciones_leida", columnList = "leida"),
+                @Index(name = "idx_notificaciones_creado_en", columnList = "creado_en")
+        })
 public class Notificacion {
 
     @Id
@@ -19,34 +24,61 @@ public class Notificacion {
     private Long id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "destinatario_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "contrasena", "foto"})
+    private Usuario destinatario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "articulo_id")
-    private Articulo articulo;
+    @JoinColumn(name = "emisor_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "contrasena", "foto"})
+    private Usuario emisor;
 
-    @NotBlank
-    @Column(name = "mensaje", nullable = false, length = 500)
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50, nullable = false)
+    private TipoNotificacion tipo;
+
+    @Column(length = 200)
+    private String titulo;
+
+    @Column(columnDefinition = "TEXT")
     private String mensaje;
 
-    @Column(name = "tipo", nullable = false, length = 80)
-    private String tipo;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "referencia_tipo", length = 50)
+    private ReferenciaTipo referenciaTipo;
 
-    @Column(name = "leida", nullable = false)
+    @Column(name = "referencia_id")
+    private Long referenciaId;
+
+    @Column(nullable = false)
     private boolean leida = false;
 
     @Column(name = "creado_en", nullable = false)
     private LocalDateTime creadoEn;
 
-    @PrePersist
-    public void prePersist() {
-        if (this.creadoEn == null) {
-            this.creadoEn = LocalDateTime.now();
-        }
-        if (this.tipo == null) {
-            this.tipo = "INFO";
-        }
+    @Column(name = "leido_en")
+    private LocalDateTime leidoEn;
+
+    public Notificacion() {
+        this.creadoEn = LocalDateTime.now();
+    }
+
+    public enum TipoNotificacion {
+        MENSAJE_NUEVO,
+        VALORACION_NUEVA,
+        SOLICITUD_INTERCAMBIO,
+        ARTICULO_PENDIENTE_APROBACION,
+        ARTICULO_APROBADO,
+        SISTEMA
+    }
+
+    public enum ReferenciaTipo {
+        MENSAJE,
+        VALORACION,
+        ARTICULO,
+        SOLICITUD,
+        USUARIO
     }
 }

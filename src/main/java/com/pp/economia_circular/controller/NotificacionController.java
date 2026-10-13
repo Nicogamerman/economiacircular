@@ -1,15 +1,14 @@
 package com.pp.economia_circular.controller;
 
+import com.pp.economia_circular.DTO.NotificacionResponseDto;
 import com.pp.economia_circular.service.NotificacionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -17,30 +16,77 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class NotificacionController {
 
-    private final NotificacionService notificacionService;
-
-    public NotificacionController(NotificacionService notificacionService) {
-        this.notificacionService = notificacionService;
-    }
+    @Autowired
+    private NotificacionService notificacionService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public ResponseEntity<?> listar() {
-        return ResponseEntity.ok(notificacionService.listarMisNotificaciones());
+    public ResponseEntity<?> listar(@RequestParam(value = "soloNoLeidas", defaultValue = "false") boolean soloNoLeidas) {
+        try {
+            List<NotificacionResponseDto> lista = notificacionService.listarMisNotificaciones(soloNoLeidas);
+            return ResponseEntity.ok(lista);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @GetMapping("/no-leidas")
+    @GetMapping("/no-leidas/count")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<?> contarNoLeidas() {
-        Map<String, Long> response = new HashMap<>();
-        response.put("count", notificacionService.contarNoLeidas());
-        return ResponseEntity.ok(response);
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("count", notificacionService.contarNoLeidas());
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
+    /** Compatibilidad con el front: GET /no-leidas devuelve { count } */
+    @GetMapping("/no-leidas")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> contarNoLeidasCompat() {
+        return contarNoLeidas();
+    }
+
+    /** Compatibilidad con el front: PATCH /leer marca todas como leídas */
     @PatchMapping("/leer")
     @PreAuthorize("hasAnyRole('USER','ADMIN')")
-    public ResponseEntity<?> marcarComoLeidas() {
-        notificacionService.marcarComoLeidas();
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> marcarTodasComoLeidasCompat() {
+        return marcarTodasComoLeidas();
+    }
+
+    @PutMapping("/{id}/leer")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> marcarComoLeida(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(notificacionService.marcarComoLeida(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/leer-todas")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> marcarTodasComoLeidas() {
+        try {
+            int actualizadas = notificacionService.marcarTodasComoLeidas();
+            Map<String, Object> response = new HashMap<>();
+            response.put("actualizadas", actualizadas);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        try {
+            notificacionService.eliminar(id);
+            return ResponseEntity.ok("Notificación eliminada");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

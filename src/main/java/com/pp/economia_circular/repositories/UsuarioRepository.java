@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.Query;
 import java.util.List;
-
 import java.util.Optional;
 
 @Repository
@@ -21,5 +20,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             "ORDER BY YEAR(u.creadoEn), MONTH(u.creadoEn)")
     List<Object[]> countUsuariosAgrupadosPorMes();
 
+    List<Usuario> findByRolContaining(String rol);
 }
 
