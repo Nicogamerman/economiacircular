@@ -17,7 +17,8 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # El plan gratuito de Render da 512 MB: la JVM usa como máximo el 75 % de la memoria del contenedor
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75 -XX:+UseSerialGC -Xss512k"
+# (en Java 8 el porcentaje tiene que llevar decimales: 75.0)
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -Xss512k"
 
 # Render define PORT; application.properties usa server.port=${PORT:8081}
 EXPOSE 8080
