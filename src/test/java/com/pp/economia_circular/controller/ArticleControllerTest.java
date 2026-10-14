@@ -8,6 +8,7 @@ import com.pp.economia_circular.DTO.ArticleSearchDto;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import com.pp.economia_circular.repositories.EventRepository;
+import com.pp.economia_circular.repositories.ImagenArticuloRepository;
 import com.pp.economia_circular.repositories.MensajeRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.ArticleService;
@@ -57,6 +58,9 @@ class ArticleControllerTest {
 
     @MockBean
     private ArticleRepository articleRepository;
+
+    @MockBean
+    private ImagenArticuloRepository imagenArticuloRepository;
 
     @MockBean
     private ServicioMensaje servicioMensaje;

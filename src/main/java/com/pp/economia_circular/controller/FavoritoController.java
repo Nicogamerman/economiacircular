@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -62,7 +63,10 @@ public class FavoritoController {
     public ResponseEntity<?> estado(@PathVariable Long articuloId) {
         try {
             boolean esFavorito = favoritoService.esFavorito(articuloId);
-            return ResponseEntity.ok(Map.of("esFavorito", esFavorito, "articuloId", articuloId));
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("esFavorito", esFavorito);
+            body.put("articuloId", articuloId);
+            return ResponseEntity.ok(body);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -72,7 +76,10 @@ public class FavoritoController {
     public ResponseEntity<?> contar(@PathVariable Long articuloId) {
         try {
             long total = favoritoService.contarFavoritos(articuloId);
-            return ResponseEntity.ok(Map.of("articuloId", articuloId, "total", total));
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("articuloId", articuloId);
+            body.put("total", total);
+            return ResponseEntity.ok(body);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

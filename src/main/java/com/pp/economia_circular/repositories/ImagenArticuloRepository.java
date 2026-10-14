@@ -2,6 +2,8 @@ package com.pp.economia_circular.repositories;
 
 import com.pp.economia_circular.entity.ImagenArticulo;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,4 +14,8 @@ public interface ImagenArticuloRepository extends JpaRepository<ImagenArticulo, 
     List<ImagenArticulo> findByArticulo_IdOrderByCreadoEnAsc(Long articuloId);
 
     long countByArticulo_Id(Long articuloId);
+
+    // Id de la primera imagen subida (portada), sin cargar el contenido binario
+    @Query("SELECT MIN(i.id) FROM ImagenArticulo i WHERE i.articulo.id = :articuloId")
+    Long findPrimeraImagenId(@Param("articuloId") Long articuloId);
 }

@@ -4,6 +4,8 @@ import com.pp.economia_circular.DTO.PerfilUpdateDto;
 import com.pp.economia_circular.DTO.UsuarioPerfilDto;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.UsuarioRepository;
+import com.pp.economia_circular.service.MetricasUsuarioService;
+import com.pp.economia_circular.service.TelefonoVerificacionService;
 import com.pp.economia_circular.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -28,7 +32,49 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private MetricasUsuarioService metricasUsuarioService;
+
+    @Autowired
+    private TelefonoVerificacionService telefonoVerificacionService;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    // --- Métricas propias (actividad como oferente e intercambios) ---
+
+    @GetMapping("/me/metricas")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> misMetricas() {
+        try {
+            return ResponseEntity.ok(metricasUsuarioService.misMetricas());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // --- Verificación de celular ---
+
+    @PostMapping("/me/telefono")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> enviarCodigoTelefono(@RequestBody Map<String, String> body) {
+        try {
+            telefonoVerificacionService.enviarCodigo(body.get("telefono"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Te enviamos un código por SMS"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/me/telefono/verificar")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> verificarTelefono(@RequestBody Map<String, String> body) {
+        try {
+            telefonoVerificacionService.verificarCodigo(body.get("codigo"));
+            return ResponseEntity.ok(Collections.singletonMap("message", "Celular verificado"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
     // --- Perfil público ---
 
@@ -118,7 +164,7 @@ public class UsuarioController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Usuario> crearUsuario(@RequestBody Usuario usuario) {
-        if (usuario.getContrasena() != null && !usuario.getContrasena().isBlank()) {
+        if (usuario.getContrasena() != null && !usuario.getContrasena().trim().isEmpty()) {
             usuario.setContrasena(passwordEncoder.encode(usuario.getContrasena()));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioRepository.save(usuario));
@@ -132,7 +178,7 @@ public class UsuarioController {
                     usuario.setNombre(datosActualizados.getNombre());
                     usuario.setApellido(datosActualizados.getApellido());
                     usuario.setEmail(datosActualizados.getEmail());
-                    if (datosActualizados.getContrasena() != null && !datosActualizados.getContrasena().isBlank()) {
+                    if (datosActualizados.getContrasena() != null && !datosActualizados.getContrasena().trim().isEmpty()) {
                         usuario.setContrasena(passwordEncoder.encode(datosActualizados.getContrasena()));
                     }
                     usuario.setRol(datosActualizados.getRol());

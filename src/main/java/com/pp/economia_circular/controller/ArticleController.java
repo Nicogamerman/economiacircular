@@ -6,6 +6,7 @@ import com.pp.economia_circular.DTO.ArticleSearchDto;
 import com.pp.economia_circular.DTO.ArticleUserDto;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.repositories.ArticleRepository;
+import com.pp.economia_circular.repositories.ImagenArticuloRepository;
 import com.pp.economia_circular.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,9 @@ public class ArticleController {
 
     @Autowired
     private ArticleRepository articleRepository;
+
+    @Autowired
+    private ImagenArticuloRepository imagenRepository;
 
     @GetMapping
     public ResponseEntity<?> getAllArticles(
@@ -65,7 +69,8 @@ public class ArticleController {
                             a.getEstado(),
                             a.getCondicion(),
                             a.getDescripcion(),
-                            a.getUsuario() != null ? a.getUsuario().getEmail() : "Desconocido"
+                            a.getUsuario() != null ? a.getUsuario().getEmail() : "Desconocido",
+                            imagenRepository.findPrimeraImagenId(a.getId())
                     ))
                     .collect(Collectors.toList());
 

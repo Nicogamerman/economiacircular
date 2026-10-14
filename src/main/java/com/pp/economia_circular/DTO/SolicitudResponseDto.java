@@ -96,4 +96,10 @@ public class SolicitudResponseDto {
 
     public LocalDateTime getActualizadoEn() { return actualizadoEn; }
     public void setActualizadoEn(LocalDateTime actualizadoEn) { this.actualizadoEn = actualizadoEn; }
+
+    /** Última devolución pedida sobre este intercambio (null si no hay). */
+    private DevolucionDto devolucion;
+
+    public DevolucionDto getDevolucion() { return devolucion; }
+    public void setDevolucion(DevolucionDto devolucion) { this.devolucion = devolucion; }
 }

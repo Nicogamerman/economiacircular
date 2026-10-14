@@ -12,7 +12,10 @@ public class MensajeDto {
     private Long destinatarioId;
     private String destinatarioEmail;
     private Long articuloId;
+    private String articuloTitulo;
     private String estado;
+    private String tipo;
+    private Integer audioDuracionSeg;
     private LocalDateTime creadoEn;
     private LocalDateTime leidoEn;
 
@@ -22,6 +25,8 @@ public class MensajeDto {
         this.id = mensaje.getId();
         this.contenido = mensaje.getContenido();
         this.estado = mensaje.getEstado().name();
+        this.tipo = mensaje.getTipo().name();
+        this.audioDuracionSeg = mensaje.getAudioDuracionSeg();
         this.creadoEn = mensaje.getCreadoEn();
         this.leidoEn = mensaje.getLeidoEn();
 
@@ -37,12 +42,16 @@ public class MensajeDto {
 
         if (mensaje.getArticulo() != null) {
             this.articuloId = mensaje.getArticulo().getId();
+            this.articuloTitulo = mensaje.getArticulo().getTitulo();
         }
     }
 
     // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public String getArticuloTitulo() { return articuloTitulo; }
+    public void setArticuloTitulo(String articuloTitulo) { this.articuloTitulo = articuloTitulo; }
 
     public String getContenido() { return contenido; }
     public void setContenido(String contenido) { this.contenido = contenido; }
@@ -61,6 +70,12 @@ public class MensajeDto {
 
     public Long getArticuloId() { return articuloId; }
     public void setArticuloId(Long articuloId) { this.articuloId = articuloId; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public Integer getAudioDuracionSeg() { return audioDuracionSeg; }
+    public void setAudioDuracionSeg(Integer audioDuracionSeg) { this.audioDuracionSeg = audioDuracionSeg; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

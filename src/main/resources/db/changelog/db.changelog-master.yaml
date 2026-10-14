@@ -234,3 +234,33 @@ databaseChangeLog:
             path: db/changelog/sql/06-notificaciones.sql
             splitStatements: true
             stripComments: true
+
+  - changeSet:
+      id: 14-backlog-final
+      author: economia-circular
+      comment: Celular e identidad verificados, seguimientos, intereses, devoluciones, video y mensajes de voz.
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/14-backlog-final.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS mensajes_audio;
+        - sql: DROP TABLE IF EXISTS videos_articulos;
+        - sql: DROP TABLE IF EXISTS devoluciones;
+        - sql: DROP TABLE IF EXISTS intereses_eventos;
+        - sql: DROP TABLE IF EXISTS seguimientos;
+        - sql: DROP TABLE IF EXISTS verificaciones_identidad;
+        - sql: DROP TABLE IF EXISTS telefono_verificaciones;
+
+  - changeSet:
+      id: 15-seed-politica-devoluciones
+      author: economia-circular
+      context: prod
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/15-seed-politica-devoluciones.sql
+            splitStatements: true
+            stripComments: false
+      rollback:
+        - sql: DELETE FROM politicas WHERE tipo = 'DEVOLUCIONES';

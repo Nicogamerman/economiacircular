@@ -44,6 +44,17 @@ public class Usuario {
     @Column(name = "email_verificado_en")
     private LocalDateTime emailVerificadoEn;
 
+    /** Celular en formato internacional (E.164), verificado por código SMS. */
+    @Column(length = 20)
+    private String telefono;
+
+    @Column(name = "telefono_verificado")
+    private boolean telefonoVerificado = false;
+
+    /** Identidad validada (documento + selfie) para prevenir fraudes. */
+    @Column(name = "identidad_verificada")
+    private boolean identidadVerificada = false;
+
     @Column(name = "creado_en")
     private LocalDateTime creadoEn;
     @Column(name = "actualizado_en")

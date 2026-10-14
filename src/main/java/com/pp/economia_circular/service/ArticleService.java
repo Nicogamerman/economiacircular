@@ -8,6 +8,7 @@ import com.pp.economia_circular.entity.EtiquetaArticulo;
 import com.pp.economia_circular.entity.Usuario;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import com.pp.economia_circular.repositories.EtiquetaArticuloRepository;
+import com.pp.economia_circular.repositories.ImagenArticuloRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,10 @@ public class ArticleService {
     private NotificacionService notificacionService;
     @Autowired(required = false)
     private EtiquetaArticuloRepository etiquetaRepository;
+    @Autowired(required = false)
+    private ImagenArticuloRepository imagenRepository;
+    @Autowired(required = false)
+    private SeguimientoService seguimientoService;
 
     public ArticleResponseDto createArticle(ArticleCreateDto createDto) {
         Usuario currentUser = authService.getCurrentUser();
@@ -69,6 +74,9 @@ public class ArticleService {
             );
         }
         reemplazarEtiquetas(savedArticle, createDto.getEtiquetas());
+        if (isAdmin && seguimientoService != null) {
+            seguimientoService.notificarNuevoArticulo(savedArticle);
+        }
         return convertToResponseDto(savedArticle);
     }
 
@@ -128,6 +136,9 @@ public class ArticleService {
                 "Tu articulo \"" + approved.getTitulo() + "\" fue aprobado y ya esta publicado.",
                 "ARTICULO_APROBADO"
         );
+        if (seguimientoService != null) {
+            seguimientoService.notificarNuevoArticulo(approved);
+        }
 
         return convertToResponseDto(approved);
     }
@@ -264,7 +275,7 @@ public class ArticleService {
                 .collect(Collectors.toList());
     }
 
-    private ArticleResponseDto convertToResponseDto(Articulo article) {
+    ArticleResponseDto convertToResponseDto(Articulo article) {
         ArticleResponseDto dto = new ArticleResponseDto();
         dto.setId(article.getId());
         dto.setTitle(article.getTitulo());
@@ -283,6 +294,9 @@ public class ArticleService {
         if (article.getUsuario() != null) {
             dto.setUserId(article.getUsuario().getId());
             dto.setUsername(article.getUsuario().getEmail());
+        }
+        if (imagenRepository != null && article.getId() != null) {
+            dto.setImagenPrincipalId(imagenRepository.findPrimeraImagenId(article.getId()));
         }
         dto.setCreatedAt(article.getCreadoEn());
         dto.setUpdatedAt(article.getActualizadoEn());

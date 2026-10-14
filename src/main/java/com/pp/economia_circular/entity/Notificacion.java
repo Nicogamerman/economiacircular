@@ -71,6 +71,11 @@ public class Notificacion {
         SOLICITUD_INTERCAMBIO,
         ARTICULO_PENDIENTE_APROBACION,
         ARTICULO_APROBADO,
+        NUEVO_ARTICULO_SEGUIDO,
+        EVENTO_NUEVO,
+        EVENTO_ACTUALIZADO,
+        DEVOLUCION,
+        VERIFICACION_IDENTIDAD,
         SISTEMA
     }
 
@@ -79,6 +84,8 @@ public class Notificacion {
         VALORACION,
         ARTICULO,
         SOLICITUD,
+        EVENTO,
+        DEVOLUCION,
         USUARIO
     }
 }

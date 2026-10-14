@@ -27,4 +27,7 @@ public interface FavoritoRepository extends JpaRepository<Favorito, Long> {
     void deleteByUsuario_IdAndArticulo_Id(@Param("usuarioId") Long usuarioId, @Param("articuloId") Long articuloId);
 
     long countByArticulo_Id(Long articuloId);
+
+    @Query("SELECT COUNT(f) FROM Favorito f WHERE f.articulo.usuario.id = :usuarioId")
+    long countByPropietario(@Param("usuarioId") Long usuarioId);
 }

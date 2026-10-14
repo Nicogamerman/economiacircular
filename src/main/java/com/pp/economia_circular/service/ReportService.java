@@ -552,7 +552,8 @@ public class ReportService {
         return item;
     }
 
-    private double calcularCo2(Articulo art) {
+    static double calcularCo2(Articulo art) {
+        if (art.getCategoria() == null) return 0.5;
         switch (art.getCategoria()) {
             case ELECTRONICOS: return 3.0;
             case MUEBLES: return 1.5;
@@ -569,7 +570,8 @@ public class ReportService {
         }
     }
 
-    private double calcularResiduos(Articulo art) {
+    static double calcularResiduos(Articulo art) {
+        if (art.getCategoria() == null) return 0.5;
         switch (art.getCategoria()) {
             case ELECTRONICOS: return 1.5;
             case MUEBLES: return 1.0;

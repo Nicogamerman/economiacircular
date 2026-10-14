@@ -17,4 +17,7 @@ public interface VistaArticuloRepository extends JpaRepository<VistaArticulo, Lo
     List<Object[]> findTopViewedArticles();
     long countByVistoEnAfter(LocalDateTime fecha);
 
+    @Query("SELECT COUNT(v) FROM VistaArticulo v WHERE v.articulo.usuario.id = :usuarioId")
+    long countByPropietario(@org.springframework.data.repository.query.Param("usuarioId") Long usuarioId);
+
 }

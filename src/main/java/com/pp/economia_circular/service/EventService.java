@@ -23,6 +23,22 @@ public class EventService {
     
     @Autowired
     private JWTService authService;
+
+    @Autowired(required = false)
+    private SeguimientoService seguimientoService;
+
+    /** Cambios relevantes para quienes siguen el evento (fecha y lugar). Vacío si no hay. */
+    static String describirCambios(Event actual, EventCreateDto nuevo) {
+        StringBuilder sb = new StringBuilder();
+        if (nuevo.getEventDate() != null && !nuevo.getEventDate().equals(actual.getEventDate())) {
+            sb.append("Cambió la fecha.");
+        }
+        if (nuevo.getLocation() != null && !nuevo.getLocation().equals(actual.getLocation())) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append("Cambió el lugar.");
+        }
+        return sb.toString();
+    }
     
     public EventResponseDto createEvent(EventCreateDto createDto) {
         Usuario currentUser = authService.getCurrentUser();
@@ -46,6 +62,9 @@ public class EventService {
         event.setUsuario(currentUser);
         
         Event savedEvent = eventRepository.save(event);
+        if (seguimientoService != null) {
+            seguimientoService.notificarEventoNuevo(savedEvent);
+        }
         return convertToResponseDto(savedEvent);
     }
     
@@ -98,6 +117,8 @@ public class EventService {
             throw new RuntimeException("No tienes permisos para editar este evento");
         }
         
+        String cambios = describirCambios(event, updateDto);
+
         event.setEventName(updateDto.getEventName());
         event.setDescription(updateDto.getDescription());
         event.setEventDate(updateDto.getEventDate());
@@ -105,8 +126,11 @@ public class EventService {
         event.setLatitude(updateDto.getLatitude());
         event.setLongitude(updateDto.getLongitude());
         event.setEventType(updateDto.getEventType());
-        
+
         Event updatedEvent = eventRepository.save(event);
+        if (seguimientoService != null && !cambios.isEmpty()) {
+            seguimientoService.notificarEventoActualizado(updatedEvent, cambios);
+        }
         return convertToResponseDto(updatedEvent);
     }
     
@@ -127,6 +151,9 @@ public class EventService {
         
         event.setStatus(Event.EventStatus.CANCELLED);
         eventRepository.save(event);
+        if (seguimientoService != null) {
+            seguimientoService.notificarEventoActualizado(event, "El evento fue cancelado.");
+        }
     }
     
     private EventResponseDto convertToResponseDto(Event event) {

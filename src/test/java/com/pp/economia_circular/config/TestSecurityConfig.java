@@ -37,6 +37,9 @@ public class TestSecurityConfig {
                         .antMatchers(HttpMethod.GET, "/api/politicas", "/api/politicas/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/favoritos/*/count").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/usuarios/perfil/**", "/api/usuarios/*/foto").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles/*/video", "/api/articles/*/video/file").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/seguimientos/oferentes/*", "/api/seguimientos/eventos/*").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/ia/estado", "/api/devoluciones/plazo").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")

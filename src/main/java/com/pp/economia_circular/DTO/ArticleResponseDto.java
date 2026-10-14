@@ -28,6 +28,7 @@ public class ArticleResponseDto {
     private Articulo.CondicionArticulo condition;
     private Articulo.EstadoArticulo status;
     private List<String> etiquetas;
+    private Long imagenPrincipalId;
     private Long userId;
     private String username;
     private LocalDateTime createdAt;

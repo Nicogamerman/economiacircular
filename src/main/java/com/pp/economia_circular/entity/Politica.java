@@ -49,7 +49,7 @@ public class Politica {
     }
 
     public enum TipoPolitica {
-        POLITICA_PRIVACIDAD, TERMINOS_USO, REGLAS_COMUNIDAD, FAQ, OTRO
+        POLITICA_PRIVACIDAD, TERMINOS_USO, REGLAS_COMUNIDAD, FAQ, DEVOLUCIONES, OTRO
     }
 
     public Long getId() { return id; }

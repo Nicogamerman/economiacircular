@@ -58,4 +58,21 @@ public class UsuarioPerfilDto {
 
     public LocalDateTime getCreadoEn() { return creadoEn; }
     public void setCreadoEn(LocalDateTime creadoEn) { this.creadoEn = creadoEn; }
+
+    private String telefono;
+    private boolean telefonoVerificado;
+    private boolean identidadVerificada;
+    private Long seguidores;
+
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
+
+    public boolean isTelefonoVerificado() { return telefonoVerificado; }
+    public void setTelefonoVerificado(boolean telefonoVerificado) { this.telefonoVerificado = telefonoVerificado; }
+
+    public boolean isIdentidadVerificada() { return identidadVerificada; }
+    public void setIdentidadVerificada(boolean identidadVerificada) { this.identidadVerificada = identidadVerificada; }
+
+    public Long getSeguidores() { return seguidores; }
+    public void setSeguidores(Long seguidores) { this.seguidores = seguidores; }
 }

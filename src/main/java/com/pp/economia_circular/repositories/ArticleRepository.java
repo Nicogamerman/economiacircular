@@ -17,6 +17,8 @@ public interface ArticleRepository extends JpaRepository<Articulo, Long> {
     
     List<Articulo> findByUsuario_Id(Long userId);
 
+    Page<Articulo> findByUsuario_IdInAndEstadoOrderByCreadoEnDesc(java.util.Collection<Long> usuarioIds, Articulo.EstadoArticulo estado, Pageable pageable);
+
     long countByUsuario_IdAndEstado(Long usuarioId, Articulo.EstadoArticulo estado);
     
     List<Articulo> findByCategoria(Articulo.CategoriaArticulo categoria);

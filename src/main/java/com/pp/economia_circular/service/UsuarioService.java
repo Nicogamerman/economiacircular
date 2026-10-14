@@ -4,7 +4,9 @@ import com.pp.economia_circular.DTO.PerfilUpdateDto;
 import com.pp.economia_circular.DTO.UsuarioPerfilDto;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.entity.Usuario;
+import com.pp.economia_circular.entity.Seguimiento;
 import com.pp.economia_circular.repositories.ArticleRepository;
+import com.pp.economia_circular.repositories.SeguimientoRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.repositories.ValoracionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,9 @@ public class UsuarioService {
 
     @Autowired(required = false)
     private ArticleRepository articleRepository;
+
+    @Autowired(required = false)
+    private SeguimientoRepository seguimientoRepository;
 
     @Transactional(readOnly = true)
     public UsuarioPerfilDto obtenerPerfilPublico(Long id) {
@@ -109,11 +114,19 @@ public class UsuarioService {
         dto.setActivo(u.isActivo());
         dto.setTieneFoto(u.getFoto() != null && u.getFoto().length > 0);
         dto.setCreadoEn(u.getCreadoEn());
+        dto.setIdentidadVerificada(u.isIdentidadVerificada());
+        dto.setTelefonoVerificado(u.isTelefonoVerificado());
 
         if (incluirDatosSensibles) {
             dto.setEmail(u.getEmail());
             dto.setDomicilio(u.getDomicilio());
             dto.setEmailVerificado(u.isEmailVerificado());
+            dto.setTelefono(u.getTelefono());
+        }
+
+        if (seguimientoRepository != null) {
+            dto.setSeguidores(seguimientoRepository.countByTipoAndObjetivoId(
+                    Seguimiento.TipoSeguimiento.OFERENTE, u.getId()));
         }
 
         if (valoracionRepository != null) {

@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -112,7 +113,7 @@ public class SoporteChatController {
     public ResponseEntity<?> marcarLeidos(@PathVariable Long chatId) {
         try {
             int actualizados = soporteService.marcarMensajesLeidos(chatId);
-            return ResponseEntity.ok(Map.of("mensajesMarcados", actualizados));
+            return ResponseEntity.ok(Collections.singletonMap("mensajesMarcados", actualizados));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

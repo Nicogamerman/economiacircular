@@ -54,4 +54,7 @@ public interface SolicitudIntercambioRepository extends JpaRepository<SolicitudI
 
     @Query("SELECT COUNT(s) > 0 FROM SolicitudIntercambio s WHERE s.estado = 'COMPLETADO' AND ((s.solicitante.id = :aId AND s.articuloSolicitado.usuario.id = :bId) OR (s.solicitante.id = :bId AND s.articuloSolicitado.usuario.id = :aId))")
     boolean existeIntercambioCompletado(@Param("aId") Long aId, @Param("bId") Long bId);
+
+    @Query("SELECT s FROM SolicitudIntercambio s JOIN FETCH s.articuloSolicitado a JOIN FETCH s.articuloOfrecido WHERE s.solicitante.id = :usuarioId OR a.usuario.id = :usuarioId")
+    List<SolicitudIntercambio> findAllByParticipante(@Param("usuarioId") Long usuarioId);
 }

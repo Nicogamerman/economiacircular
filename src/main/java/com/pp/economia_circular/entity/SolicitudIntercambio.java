@@ -78,7 +78,9 @@ public class SolicitudIntercambio {
     }
     
     public enum EstadoIntercambio {
-        PENDIENTE, ACEPTADO, RECHAZADO, COMPLETADO, CANCELADO
+        PENDIENTE, ACEPTADO, RECHAZADO, COMPLETADO, CANCELADO,
+        // Intercambio completado que se revirtió por una devolución aceptada
+        DEVUELTO
     }
 }
 

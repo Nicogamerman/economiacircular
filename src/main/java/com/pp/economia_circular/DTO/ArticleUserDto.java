@@ -16,4 +16,5 @@ public class ArticleUserDto {
     private Articulo.CondicionArticulo condicion;
     private String descripcion;
     private String usuarioEmail;
+    private Long imagenPrincipalId;
 }

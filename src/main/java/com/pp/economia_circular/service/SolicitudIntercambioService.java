@@ -1,6 +1,8 @@
 package com.pp.economia_circular.service;
 
 import com.pp.economia_circular.DTO.CambiarEstadoSolicitudDto;
+import com.pp.economia_circular.DTO.DevolucionDto;
+import com.pp.economia_circular.repositories.DevolucionRepository;
 import com.pp.economia_circular.DTO.SolicitudCreateDto;
 import com.pp.economia_circular.DTO.SolicitudResponseDto;
 import com.pp.economia_circular.entity.Articulo;
@@ -30,6 +32,19 @@ public class SolicitudIntercambioService {
 
     @Autowired(required = false)
     private NotificacionService notificacionService;
+
+    @Autowired(required = false)
+    private DevolucionRepository devolucionRepository;
+
+    private SolicitudResponseDto conDevolucion(SolicitudIntercambio s) {
+        SolicitudResponseDto dto = SolicitudResponseDto.from(s);
+        if (devolucionRepository != null && s.getId() != null) {
+            devolucionRepository.findFirstBySolicitud_IdOrderByCreadoEnDesc(s.getId())
+                    .map(DevolucionDto::from)
+                    .ifPresent(dto::setDevolucion);
+        }
+        return dto;
+    }
 
     public SolicitudResponseDto crear(SolicitudCreateDto dto) {
         Usuario solicitante = authService.getCurrentUser();
@@ -84,7 +99,7 @@ public class SolicitudIntercambioService {
         Usuario usuario = authService.getCurrentUser();
         if (usuario == null) throw new RuntimeException("Usuario no autenticado");
         return solicitudRepository.findBySolicitante_Id(usuario.getId(), pageable)
-                .map(SolicitudResponseDto::from);
+                .map(this::conDevolucion);
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +107,7 @@ public class SolicitudIntercambioService {
         Usuario usuario = authService.getCurrentUser();
         if (usuario == null) throw new RuntimeException("Usuario no autenticado");
         return solicitudRepository.findByPropietarioArticuloSolicitado(usuario.getId(), pageable)
-                .map(SolicitudResponseDto::from);
+                .map(this::conDevolucion);
     }
 
     @Transactional(readOnly = true)
@@ -100,7 +115,7 @@ public class SolicitudIntercambioService {
         Usuario usuario = authService.getCurrentUser();
         if (usuario == null) throw new RuntimeException("Usuario no autenticado");
         return solicitudRepository.findHistorialByUsuarioId(usuario.getId(), pageable)
-                .map(SolicitudResponseDto::from);
+                .map(this::conDevolucion);
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +127,7 @@ public class SolicitudIntercambioService {
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
         verificarAcceso(solicitud, usuario);
-        return SolicitudResponseDto.from(solicitud);
+        return conDevolucion(solicitud);
     }
 
     public SolicitudResponseDto cambiarEstado(Long id, CambiarEstadoSolicitudDto dto) {
@@ -173,7 +188,8 @@ public class SolicitudIntercambioService {
 
         if (actual == SolicitudIntercambio.EstadoIntercambio.CANCELADO
                 || actual == SolicitudIntercambio.EstadoIntercambio.RECHAZADO
-                || actual == SolicitudIntercambio.EstadoIntercambio.COMPLETADO) {
+                || actual == SolicitudIntercambio.EstadoIntercambio.COMPLETADO
+                || actual == SolicitudIntercambio.EstadoIntercambio.DEVUELTO) {
             throw new RuntimeException("La solicitud ya está en estado final: " + actual);
         }
 
