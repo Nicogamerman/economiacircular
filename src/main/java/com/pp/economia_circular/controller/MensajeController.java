@@ -2,12 +2,15 @@ package com.pp.economia_circular.controller;
 
 import com.pp.economia_circular.DTO.MensajeDto;
 import com.pp.economia_circular.entity.Mensaje;
+import com.pp.economia_circular.entity.MensajeAudio;
 import com.pp.economia_circular.service.MensajeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -95,6 +98,50 @@ public class MensajeController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error al contar mensajes no leídos: " + e.getMessage());
+        }
+    }
+
+    // 🎤 Enviar mensaje de voz (multipart: destinatarioId, articuloId, audio, duracionSeg)
+    @PostMapping(value = "/enviar-audio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> enviarAudio(@RequestParam Long destinatarioId,
+                                         @RequestParam Long articuloId,
+                                         @RequestParam("audio") MultipartFile audio,
+                                         @RequestParam(required = false) Integer duracionSeg) {
+        try {
+            Mensaje mensaje = mensajeService.enviarAudio(destinatarioId, articuloId, audio, duracionSeg);
+            return ResponseEntity.status(HttpStatus.CREATED).body(new MensajeDto(mensaje));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    // 🔊 Descargar el audio de un mensaje
+    @GetMapping("/{mensajeId}/audio")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> obtenerAudio(@PathVariable Long mensajeId) {
+        try {
+            MensajeAudio audio = mensajeService.obtenerAudio(mensajeId);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(audio.getContentType()))
+                    .body(audio.getContenido());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    // 🗂️ Obtener todos mis mensajes (para armar la bandeja de conversaciones)
+    @GetMapping("/mis-mensajes")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    public ResponseEntity<?> obtenerMisMensajes() {
+        try {
+            List<MensajeDto> mensajesDto = mensajeService.obtenerMisMensajes().stream()
+                    .map(MensajeDto::new)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(mensajesDto);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error al obtener mensajes: " + e.getMessage());
         }
     }
 

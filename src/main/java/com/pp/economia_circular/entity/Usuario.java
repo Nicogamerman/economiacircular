@@ -19,8 +19,16 @@ public class Usuario {
     private String nombre;
     private String apellido;
     private String email;
-    private String contrasena;
+    private String contrasena;  // nullable para usuarios que solo inician con Google
     private String rol;
+
+    /** ID del usuario en Google (sub del ID token). Permite login y vinculación. */
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
+    /** Proveedor de autenticación: "local" (email/contraseña) o "google". */
+    @Column(name = "auth_provider", length = 50)
+    private String authProvider = "local";
 
     private String domicilio;
 
@@ -29,6 +37,27 @@ public class Usuario {
     private byte[] foto;
 
     private boolean activo = true;
+
+    @Column(name = "email_verificado")
+    private boolean emailVerificado = false;
+
+    @Column(name = "email_verificado_en")
+    private LocalDateTime emailVerificadoEn;
+
+    /** Celular en formato internacional (E.164), verificado por código SMS. */
+    @Column(length = 20)
+    private String telefono;
+
+    @Column(name = "telefono_verificado")
+    private boolean telefonoVerificado = false;
+
+    /** Identidad validada (documento + selfie) para prevenir fraudes. */
+    @Column(name = "identidad_verificada")
+    private boolean identidadVerificada = false;
+
+    @Column(name = "creado_en")
     private LocalDateTime creadoEn;
+    @Column(name = "actualizado_en")
     private LocalDateTime actualizadoEn;
+
 }

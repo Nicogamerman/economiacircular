@@ -1,6 +1,7 @@
 package com.pp.economia_circular.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,7 +33,19 @@ public class Articulo {
     
     @Enumerated(EnumType.STRING)
     private CategoriaArticulo categoria;
-    
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String subcategoria;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String marca;
+
+    @Size(max = 100)
+    @Column(length = 100)
+    private String modelo;
+
     @Enumerated(EnumType.STRING)
     private CondicionArticulo condicion;
     
@@ -58,6 +71,9 @@ public class Articulo {
     
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<VistaArticulo> vistas;
+
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<EtiquetaArticulo> etiquetas;
     
     // Constructores
     public Articulo() {
@@ -89,11 +105,24 @@ public class Articulo {
     }
     @Getter
     public enum CondicionArticulo {
-        NUEVO, USADO, REACONDICIONADO, AVERIADO
+        COMO_NUEVO, USADO, REACONDICIONADO, AVERIADO, BUENO;
+
+        @JsonCreator
+        public static CondicionArticulo fromValue(String value) {
+            if (value == null) {
+                return null;
+            }
+            String normalized = value.trim().toUpperCase();
+            if ("NUEVO".equals(normalized)) {
+                return COMO_NUEVO;
+            }
+            return CondicionArticulo.valueOf(normalized);
+        }
     }
     @Getter
     public enum EstadoArticulo {
         DISPONIBLE,
+        PENDIENTE_APROBACION,
         INTERCAMBIADO,
         RESERVADO,
         DONADO,

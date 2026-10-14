@@ -5,7 +5,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class PingController {
-        @GetMapping("/")
+        /** Health check: /ping es público (lo usa Render para saber si el servicio está vivo). */
+        @GetMapping({"/", "/ping"})
         public String health() {
             return "OK";
         }

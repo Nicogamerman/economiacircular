@@ -8,6 +8,7 @@ import com.pp.economia_circular.DTO.ArticleSearchDto;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.repositories.ArticleRepository;
 import com.pp.economia_circular.repositories.EventRepository;
+import com.pp.economia_circular.repositories.ImagenArticuloRepository;
 import com.pp.economia_circular.repositories.MensajeRepository;
 import com.pp.economia_circular.repositories.UsuarioRepository;
 import com.pp.economia_circular.service.ArticleService;
@@ -59,6 +60,9 @@ class ArticleControllerTest {
     private ArticleRepository articleRepository;
 
     @MockBean
+    private ImagenArticuloRepository imagenArticuloRepository;
+
+    @MockBean
     private ServicioMensaje servicioMensaje;
 
     @MockBean
@@ -98,14 +102,14 @@ class ArticleControllerTest {
         createDto.setTitle("Test Article");
         createDto.setDescription("Test Description");
         createDto.setCategory(Articulo.CategoriaArticulo.ELECTRONICOS);
-        createDto.setCondition(Articulo.CondicionArticulo.BUENO);
+        createDto.setCondition(Articulo.CondicionArticulo.USADO);
 
         responseDto = ArticleResponseDto.builder()
                 .id(1L)
                 .title("Test Article")
                 .description("Test Description")
                 .category(Articulo.CategoriaArticulo.ELECTRONICOS)
-                .condition(Articulo.CondicionArticulo.BUENO)
+                .condition(Articulo.CondicionArticulo.USADO)
                 .status(Articulo.EstadoArticulo.DISPONIBLE)
                 .userId(1L)
                 .username("test@example.com")

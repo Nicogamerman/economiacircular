@@ -253,3 +253,4 @@ La implementación está lista para usar. Simplemente inicia la aplicación y Li
 **Versión:** 1.0  
 **Tecnologías:** Spring Boot 2.7.0 + Liquibase + MySQL + Google Cloud SQL
 
+

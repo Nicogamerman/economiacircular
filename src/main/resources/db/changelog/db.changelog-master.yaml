@@ -62,3 +62,205 @@ databaseChangeLog:
         - sql: TRUNCATE TABLE usuario;
         - sql: SET FOREIGN_KEY_CHECKS = 1;
 
+  - changeSet:
+      id: 3-password-reset-oauth
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/03-password-reset-and-oauth.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS password_reset_token;
+        - sql: ALTER TABLE usuario DROP COLUMN google_id;
+        - sql: ALTER TABLE usuario DROP COLUMN auth_provider;
+
+  - changeSet:
+      id: 4-oferente-valoraciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/04-oferente-valoraciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS valoraciones_oferente;
+
+  - changeSet:
+      id: 5-moderacion-valoraciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/05-moderacion-valoraciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: ALTER TABLE valoraciones_oferente DROP COLUMN aprobado;
+
+  - changeSet:
+      id: 3-valoraciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/03-valoraciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS valoraciones;
+
+  - changeSet:
+      id: 4-password-reset-tokens
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/04-password-reset-tokens.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS password_reset_tokens;
+
+  - changeSet:
+      id: 5-imagenes-articulos-contenido
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/05-imagenes-articulos-contenido.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: ALTER TABLE imagenes_articulos DROP COLUMN tamano_bytes;
+        - sql: ALTER TABLE imagenes_articulos DROP COLUMN content_type;
+        - sql: ALTER TABLE imagenes_articulos DROP COLUMN contenido;
+
+  - changeSet:
+      id: 6-notificaciones
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/06-notificaciones.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS notificaciones;
+
+  - changeSet:
+      id: 7-email-verification
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/07-email-verification.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS email_verification_tokens;
+        - sql: ALTER TABLE usuario DROP COLUMN email_verificado_en;
+        - sql: ALTER TABLE usuario DROP COLUMN email_verificado;
+
+  - changeSet:
+      id: 8-mejor-categorizacion
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/08-mejor-categorizacion.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS etiquetas_articulos;
+        - sql: ALTER TABLE articulos DROP COLUMN modelo;
+        - sql: ALTER TABLE articulos DROP COLUMN marca;
+        - sql: ALTER TABLE articulos DROP COLUMN subcategoria;
+
+  - changeSet:
+      id: 9-favoritos
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/09-favoritos.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS favoritos;
+
+  - changeSet:
+      id: 10-soporte-chat
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/10-soporte-chat.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS mensajes_soporte;
+        - sql: DROP TABLE IF EXISTS soporte_chats;
+
+  - changeSet:
+      id: 11-politicas
+      author: economia-circular
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/11-politicas.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS politicas;
+
+  - changeSet:
+      id: 12-seed-politicas
+      author: economia-circular
+      context: prod
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/12-seed-politicas.sql
+            splitStatements: true
+            stripComments: false
+      rollback:
+        - sql: DELETE FROM politicas WHERE tipo IN ('TERMINOS_USO','POLITICA_PRIVACIDAD','REGLAS_COMUNIDAD','FAQ');
+
+  - changeSet:
+      id: 13-unificar-notificaciones
+      author: economia-circular
+      comment: >
+        Las ramas fix/full-project-audit y claude/* crearon la tabla notificaciones con esquemas distintos.
+        Si la base tiene el esquema viejo (columna usuario_id), se recrea con el esquema unificado.
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: notificaciones
+            columnName: usuario_id
+      changes:
+        - dropTable:
+            tableName: notificaciones
+        - sqlFile:
+            path: db/changelog/sql/06-notificaciones.sql
+            splitStatements: true
+            stripComments: true
+
+  - changeSet:
+      id: 14-backlog-final
+      author: economia-circular
+      comment: Celular e identidad verificados, seguimientos, intereses, devoluciones, video y mensajes de voz.
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/14-backlog-final.sql
+            splitStatements: true
+            stripComments: true
+      rollback:
+        - sql: DROP TABLE IF EXISTS mensajes_audio;
+        - sql: DROP TABLE IF EXISTS videos_articulos;
+        - sql: DROP TABLE IF EXISTS devoluciones;
+        - sql: DROP TABLE IF EXISTS intereses_eventos;
+        - sql: DROP TABLE IF EXISTS seguimientos;
+        - sql: DROP TABLE IF EXISTS verificaciones_identidad;
+        - sql: DROP TABLE IF EXISTS telefono_verificaciones;
+
+  - changeSet:
+      id: 15-seed-politica-devoluciones
+      author: economia-circular
+      context: prod
+      changes:
+        - sqlFile:
+            path: db/changelog/sql/15-seed-politica-devoluciones.sql
+            splitStatements: true
+            stripComments: false
+      rollback:
+        - sql: DELETE FROM politicas WHERE tipo = 'DEVOLUCIONES';

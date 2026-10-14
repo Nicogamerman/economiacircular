@@ -1,0 +1,54 @@
+# Blueprint de Render: crea el servicio del backend desde este repo.
+# Render > New > Blueprint > elegir el repo. Los valores con "sync: false" se cargan
+# a mano en el panel (son secretos o dependen de cada entorno). Ver DEPLOY.md.
+services:
+  - type: web
+    name: economia-circular-api
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /ping
+    # Despliega solo si pasaron los checks de GitHub (workflow ci.yml)
+    autoDeployTrigger: checksPass
+    envVars:
+      # ---------- Base de datos (Aiven MySQL) ----------
+      - key: DB_URL
+        sync: false # jdbc:mysql://HOST:PUERTO/defaultdb?sslMode=REQUIRED&serverTimezone=UTC
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: LIQUIBASE_ENABLED
+        value: "true"
+      - key: JPA_SHOW_SQL
+        value: "false"
+
+      # ---------- URLs del front (Vercel) ----------
+      - key: PASSWORD_RESET_URL_BASE
+        sync: false # https://TU-FRONT.vercel.app/restablecer-contrasena
+      - key: EMAIL_VERIFY_URL_BASE
+        sync: false # https://TU-FRONT.vercel.app/verificar-email
+
+      # ---------- Login con Google ----------
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
+      # ---------- Email (opcional) ----------
+      - key: EMAIL_ENABLED
+        value: "false"
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+      # ---------- IA (opcional: sin key las funciones de IA se ocultan) ----------
+      - key: ANTHROPIC_API_KEY
+        sync: false

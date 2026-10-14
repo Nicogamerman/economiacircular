@@ -6,6 +6,7 @@ import com.pp.economia_circular.DTO.ArticleSearchDto;
 import com.pp.economia_circular.DTO.ArticleUserDto;
 import com.pp.economia_circular.entity.Articulo;
 import com.pp.economia_circular.repositories.ArticleRepository;
+import com.pp.economia_circular.repositories.ImagenArticuloRepository;
 import com.pp.economia_circular.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,9 @@ public class ArticleController {
     @Autowired
     private ArticleRepository articleRepository;
 
+    @Autowired
+    private ImagenArticuloRepository imagenRepository;
+
     @GetMapping
     public ResponseEntity<?> getAllArticles(
             @RequestParam(defaultValue = "0") int page,
@@ -54,8 +58,7 @@ public class ArticleController {
                     .collect(Collectors.toList());
 
             if (articulos.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                        .body("No se encontraron artículos activos para el usuario con email: " + email);
+                return ResponseEntity.ok(java.util.Collections.emptyList());
             }
 
             List<ArticleUserDto> articulosDto = articulos.stream()
@@ -66,7 +69,8 @@ public class ArticleController {
                             a.getEstado(),
                             a.getCondicion(),
                             a.getDescripcion(),
-                            a.getUsuario() != null ? a.getUsuario().getEmail() : "Desconocido"
+                            a.getUsuario() != null ? a.getUsuario().getEmail() : "Desconocido",
+                            imagenRepository.findPrimeraImagenId(a.getId())
                     ))
                     .collect(Collectors.toList());
 
@@ -83,13 +87,48 @@ public class ArticleController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) Articulo.CategoriaArticulo category,
             @RequestParam(required = false) Articulo.CondicionArticulo condition,
+            @RequestParam(required = false) String subcategoria,
+            @RequestParam(required = false) String marca,
+            @RequestParam(required = false) String tag,
+            @RequestParam(required = false) String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             ArticleSearchDto searchDto = new ArticleSearchDto(title, category, condition);
+            searchDto.setSubcategoria(subcategoria);
+            searchDto.setMarca(marca);
+            searchDto.setTag(tag);
+            searchDto.setQ(q);
             Page<ArticleResponseDto> articles = articleService.searchArticles(searchDto, pageable);
             return ResponseEntity.ok(articles);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/subcategories")
+    public ResponseEntity<?> listarSubcategorias(@RequestParam(required = false) Articulo.CategoriaArticulo category) {
+        try {
+            return ResponseEntity.ok(articleService.listarSubcategorias(category));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/brands")
+    public ResponseEntity<?> listarMarcas(@RequestParam(required = false) Articulo.CategoriaArticulo category) {
+        try {
+            return ResponseEntity.ok(articleService.listarMarcas(category));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/tags")
+    public ResponseEntity<?> listarTopTags(@RequestParam(defaultValue = "20") int limit) {
+        try {
+            return ResponseEntity.ok(articleService.listarTopEtiquetas(limit));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -124,6 +163,26 @@ public class ArticleController {
         try {
             List<ArticleResponseDto> articles = articleService.getMyArticles();
             return ResponseEntity.ok(articles);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/pending-approval")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getPendingApprovalArticles() {
+        try {
+            return ResponseEntity.ok(articleService.getPendingApprovalArticles());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveArticle(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(articleService.approveArticle(id));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

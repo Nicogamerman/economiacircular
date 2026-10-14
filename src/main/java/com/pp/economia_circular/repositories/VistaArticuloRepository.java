@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Repository
 public interface VistaArticuloRepository extends JpaRepository<VistaArticulo, Long> {
@@ -14,4 +15,9 @@ public interface VistaArticuloRepository extends JpaRepository<VistaArticulo, Lo
             "GROUP BY v.articulo.id " +
             "ORDER BY totalVistas DESC")
     List<Object[]> findTopViewedArticles();
+    long countByVistoEnAfter(LocalDateTime fecha);
+
+    @Query("SELECT COUNT(v) FROM VistaArticulo v WHERE v.articulo.usuario.id = :usuarioId")
+    long countByPropietario(@org.springframework.data.repository.query.Param("usuarioId") Long usuarioId);
+
 }

@@ -6,6 +6,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
@@ -14,17 +16,30 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 public class TestSecurityConfig {
 
     @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
     public SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
                 .authorizeRequests(auth -> auth
-                        // Endpoints públicos
+                        // link-google requiere autenticación
+                        .antMatchers("/api/auth/link-google").authenticated()
+                        // Resto de auth y registro público
                         .antMatchers("/api/auth/**", "/api/registro/**", "/api/registrar/**", "/ping").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/events", "/api/events/upcoming", "/api/events/type/**", "/api/events/nearby").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**", 
                                      "/api/articles/most-viewed", "/api/articles/user/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles/{id}").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/recycling-centers", "/api/recycling-centers/type/**", "/api/recycling-centers/nearby").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/politicas", "/api/politicas/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/favoritos/*/count").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/usuarios/perfil/**", "/api/usuarios/*/foto").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles/*/video", "/api/articles/*/video/file").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/seguimientos/oferentes/*", "/api/seguimientos/eventos/*").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/ia/estado", "/api/devoluciones/plazo").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")

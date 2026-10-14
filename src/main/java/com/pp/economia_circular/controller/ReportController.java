@@ -19,6 +19,17 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
+    @GetMapping("/overview")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> generateOverviewReport() {
+        try {
+            ReportDto report = reportService.generateOverviewReport();
+            return ResponseEntity.ok(report);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> generateUserReport() {

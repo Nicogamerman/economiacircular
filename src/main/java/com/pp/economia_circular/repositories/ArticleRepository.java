@@ -7,13 +7,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import java.time.LocalDateTime;
+import com.pp.economia_circular.entity.Articulo;
+import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 @Repository
 public interface ArticleRepository extends JpaRepository<Articulo, Long> {
     
     List<Articulo> findByUsuario_Id(Long userId);
+
+    Page<Articulo> findByUsuario_IdInAndEstadoOrderByCreadoEnDesc(java.util.Collection<Long> usuarioIds, Articulo.EstadoArticulo estado, Pageable pageable);
+
+    long countByUsuario_IdAndEstado(Long usuarioId, Articulo.EstadoArticulo estado);
     
     List<Articulo> findByCategoria(Articulo.CategoriaArticulo categoria);
     
@@ -36,6 +42,41 @@ public interface ArticleRepository extends JpaRepository<Articulo, Long> {
                                 @Param("category") Articulo.CategoriaArticulo category,
                                 @Param("condition") Articulo.CondicionArticulo condition,
                                 Pageable pageable);
+
+    @Query("SELECT DISTINCT a FROM Articulo a LEFT JOIN a.etiquetas e WHERE " +
+           "a.estado = 'DISPONIBLE' AND " +
+           "(:category IS NULL OR a.categoria = :category) AND " +
+           "(:condition IS NULL OR a.condicion = :condition) AND " +
+           "(:subcategoria IS NULL OR LOWER(a.subcategoria) = LOWER(:subcategoria)) AND " +
+           "(:marca IS NULL OR LOWER(a.marca) = LOWER(:marca)) AND " +
+           "(:tag IS NULL OR LOWER(e.etiqueta) = LOWER(:tag)) AND " +
+           "(:q IS NULL OR " +
+           "  LOWER(a.titulo) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "  LOWER(a.descripcion) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "  LOWER(COALESCE(a.subcategoria, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "  LOWER(COALESCE(a.marca, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "  LOWER(COALESCE(a.modelo, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "  LOWER(e.etiqueta) LIKE LOWER(CONCAT('%', :q, '%'))" +
+           ")")
+    Page<Articulo> searchArticlesAvanzada(@Param("q") String q,
+                                          @Param("category") Articulo.CategoriaArticulo category,
+                                          @Param("condition") Articulo.CondicionArticulo condition,
+                                          @Param("subcategoria") String subcategoria,
+                                          @Param("marca") String marca,
+                                          @Param("tag") String tag,
+                                          Pageable pageable);
+
+    @Query("SELECT DISTINCT a.subcategoria FROM Articulo a " +
+           "WHERE (:category IS NULL OR a.categoria = :category) " +
+           "AND a.subcategoria IS NOT NULL AND a.subcategoria <> '' " +
+           "ORDER BY a.subcategoria")
+    List<String> findDistinctSubcategorias(@Param("category") Articulo.CategoriaArticulo category);
+
+    @Query("SELECT DISTINCT a.marca FROM Articulo a " +
+           "WHERE (:category IS NULL OR a.categoria = :category) " +
+           "AND a.marca IS NOT NULL AND a.marca <> '' " +
+           "ORDER BY a.marca")
+    List<String> findDistinctMarcas(@Param("category") Articulo.CategoriaArticulo category);
     
     @Query("SELECT a FROM Articulo a WHERE a.usuario.id != :userId AND a.estado = 'DISPONIBLE'")
     List<Articulo> findArticlesByOtherUsers(@Param("userId") Long userId);
@@ -52,5 +93,13 @@ public interface ArticleRepository extends JpaRepository<Articulo, Long> {
     List<Articulo> findMostViewedArticles(Pageable pageable);
 
     List<Articulo> findByUsuarioEmail(String email);
+    long countByEstado(Articulo.EstadoArticulo estado);
+    long countByCreadoEnAfter(LocalDateTime fecha);
+
+    @Query("SELECT a.categoria, COUNT(a) " +
+            "FROM Articulo a " +
+            "GROUP BY a.categoria")
+    List<Object[]> countArticulosPorCategoria();
+
 
 }

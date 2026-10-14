@@ -35,9 +35,10 @@ build/
 #src/main/resources/application.properties
 
 # Configuraciones locales de Spring Boot
-/src/main/resources/application-*.properties
+#/src/main/resources/application-*.properties
 !/src/main/resources/application-example.properties
 /src/main/resources/application.properties
 
 
 app.yaml
+

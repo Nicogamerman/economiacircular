@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -25,6 +27,11 @@ public class SecurityConfig {
     private JWTFilter jwtFilter;
 
     @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors().configurationSource(corsConfigurationSource).and()
@@ -36,13 +43,25 @@ public class SecurityConfig {
                         // Swagger UI y OpenAPI
                         .antMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", 
                                      "/swagger-resources/**", "/webjars/**").permitAll()
-                        // Endpoints públicos
+                        // Endpoints públicos (link-google requiere JWT)
+                        .antMatchers("/api/auth/link-google").authenticated()
                         .antMatchers("/api/auth/**", "/api/registro/**", "/api/registrar/**", "/ping").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/events", "/api/events/upcoming", "/api/events/type/**", "/api/events/nearby").permitAll()
-                        .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**", 
-                                     "/api/articles/most-viewed", "/api/articles/user/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles", "/api/articles/search", "/api/articles/category/**",
+                                     "/api/articles/most-viewed", "/api/articles/user/**",
+                                     "/api/articles/subcategories", "/api/articles/brands", "/api/articles/tags").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/articles/{id}").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/oferentes/*/valoraciones").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles/*/images", "/api/articles/*/images/*/file").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/recycling-centers", "/api/recycling-centers/type/**", "/api/recycling-centers/nearby").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/valoraciones/usuario/**", "/api/valoraciones/articulo/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/politicas", "/api/politicas/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/stats/public").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/articles/*/video", "/api/articles/*/video/file").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/seguimientos/oferentes/*", "/api/seguimientos/eventos/*").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/ia/estado", "/api/devoluciones/plazo").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/favoritos/*/count").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/usuarios/perfil/**", "/api/usuarios/*/foto").permitAll()
                         // Crear/Actualizar/Eliminar eventos y centros requiere ADMIN
                         .antMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
@@ -50,6 +69,9 @@ public class SecurityConfig {
                         .antMatchers(HttpMethod.POST, "/api/recycling-centers/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.PUT, "/api/recycling-centers/**").hasRole("ADMIN")
                         .antMatchers(HttpMethod.DELETE, "/api/recycling-centers/**").hasRole("ADMIN")
+
+                        .antMatchers("/api/admin/dashboard", "/api/admin/dashboard/**").hasRole("ADMIN")
+
                         // Resto requiere autenticación
                         .anyRequest().authenticated()
                 )
