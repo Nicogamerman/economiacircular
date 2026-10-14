@@ -1,3 +1,4 @@
+-- Nombres de FK con prefijo propio: en MySQL son únicos por base y 03-valoraciones usa fk_valoraciones_*
 CREATE TABLE IF NOT EXISTS valoraciones_oferente (
   id BIGINT NOT NULL AUTO_INCREMENT,
   oferente_id BIGINT NOT NULL,
@@ -12,7 +13,7 @@ CREATE TABLE IF NOT EXISTS valoraciones_oferente (
   CONSTRAINT uk_valoracion_autor_articulo UNIQUE (autor_id, articulo_id),
   KEY idx_valoraciones_oferente (oferente_id),
   KEY idx_valoraciones_articulo (articulo_id),
-  CONSTRAINT fk_valoraciones_oferente FOREIGN KEY (oferente_id) REFERENCES usuario(id),
-  CONSTRAINT fk_valoraciones_autor FOREIGN KEY (autor_id) REFERENCES usuario(id),
-  CONSTRAINT fk_valoraciones_articulo FOREIGN KEY (articulo_id) REFERENCES articulos(id)
+  CONSTRAINT fk_val_oferente_oferente FOREIGN KEY (oferente_id) REFERENCES usuario(id),
+  CONSTRAINT fk_val_oferente_autor FOREIGN KEY (autor_id) REFERENCES usuario(id),
+  CONSTRAINT fk_val_oferente_articulo FOREIGN KEY (articulo_id) REFERENCES articulos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
